@@ -3,6 +3,7 @@
 const { readState, writeState } = require('./hikkakeStateManager');
 const { buildPanelEmbed, buildPanelButtons } = require('./panelBuilder');
 const { logToThread } = require('./threadLogger');
+const { InteractionResponseFlags } = require('discord.js');
 
 async function updateAllPanels(interaction, state) {
   for (const key of ['quest', 'tosu', 'horse']) {
@@ -20,11 +21,11 @@ async function updateAllPanels(interaction, state) {
         pura: counts.pura ?? 0,
         kama: counts.kama ?? 0,
         casual: counts.casual ?? 0,
-        orders: state[type]?.[panelInfo.channelId]?.orders ?? [], // 必要に応じて修正
+        orders: state[key]?.[panelInfo.channelId]?.orders ?? [], // 必要に応じて修正
       });
 
       const buttons = buildPanelButtons(key);
-      await msg.edit({ embeds: [embed], components: buttons });
+      await msg.edit({ embeds: [embed], components: buttons, content: '' });
     } catch (e) {
       console.warn(`[hikkakeCasualSubmit] パネル更新失敗: ${key}`, e.message);
     }
@@ -40,7 +41,7 @@ module.exports = {
     const casualCount = parseInt(interaction.fields.getTextInputValue('casual_count'), 10);
 
     if (isNaN(casualCount) || casualCount < 0) {
-      return interaction.editReply({ content: '人数は0以上の半角数字で入力してください。' });
+      return interaction.editReply({ content: '人数は0以上の半角数字で入力してください。', flags: InteractionResponseFlags.Ephemeral });
     }
 
     const guildId = interaction.guildId;
@@ -64,6 +65,9 @@ module.exports = {
       console.warn('[hikkakeCasualSubmit] ログ出力失敗', e);
     }
 
-    await interaction.editReply({ content: `【${type.toUpperCase()}】の「ふらっと来た」人数を ${casualCount}人 に更新しました。` });
+    await interaction.editReply({
+      content: `【${type.toUpperCase()}】の「ふらっと来た」人数を ${casualCount}人 に更新しました。`,
+      flags: InteractionResponseFlags.Ephemeral,
+    });
   }
 };

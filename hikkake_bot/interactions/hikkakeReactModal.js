@@ -5,6 +5,7 @@ const {
   TextInputBuilder,
   TextInputStyle,
   ActionRowBuilder,
+  InteractionResponseFlags,
 } = require('discord.js');
 
 module.exports = {
@@ -38,7 +39,7 @@ module.exports = {
     } catch (error) {
       console.error('[hikkakeReactModal] エラー:', error);
       if (!interaction.replied && !interaction.deferred) {
-        await interaction.reply({ content: 'モーダル表示中にエラーが発生しました。', ephemeral: true });
+        await interaction.reply({ content: 'モーダル表示中にエラーが発生しました。', flags: InteractionResponseFlags.Ephemeral });
       }
     }
   },

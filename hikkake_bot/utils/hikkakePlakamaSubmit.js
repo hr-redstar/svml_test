@@ -3,6 +3,7 @@
 const { readState, writeState } = require('./hikkakeStateManager');
 const { buildPanelEmbed, buildPanelButtons } = require('./panelBuilder');
 const { logToThread } = require('./threadLogger');
+const { InteractionResponseFlags } = require('discord.js');
 
 async function updateAllPanels(interaction, state) {
   for (const key of ['quest', 'tosu', 'horse']) {
@@ -23,7 +24,7 @@ async function updateAllPanels(interaction, state) {
       });
 
       const buttons = buildPanelButtons(key);
-      await msg.edit({ embeds: [embed], components: buttons });
+      await msg.edit({ embeds: [embed], components: buttons, content: '' }); // content: '' を明示
     } catch (e) {
       console.warn(`[hikkakePlakamaSubmit] パネル更新失敗: ${key}`, e.message);
     }
@@ -40,7 +41,10 @@ module.exports = {
     const kamaCount = parseInt(interaction.fields.getTextInputValue('kama_count'), 10);
 
     if (isNaN(puraCount) || puraCount < 0 || isNaN(kamaCount) || kamaCount < 0) {
-      return interaction.editReply({ content: '人数は0以上の半角数字で入力してください。' });
+      return interaction.editReply({
+        content: '人数は0以上の半角数字で入力してください。',
+        flags: InteractionResponseFlags.Ephemeral,
+      });
     }
 
     const guildId = interaction.guildId;
@@ -65,7 +69,8 @@ module.exports = {
     }
 
     await interaction.editReply({
-      content: `【${type.toUpperCase()}】のプラカマを プラ: ${puraCount}人, カマ: ${kamaCount}人 に更新しました。`
+      content: `【${type.toUpperCase()}】のプラカマを プラ: ${puraCount}人, カマ: ${kamaCount}人 に更新しました。`,
+      flags: InteractionResponseFlags.Ephemeral,
     });
   }
 };

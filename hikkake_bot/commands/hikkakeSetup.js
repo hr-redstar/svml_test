@@ -35,9 +35,9 @@ module.exports = {
     if (!state) state = {};
     if (!state.counts) {
       state.counts = {
-        quest: { pura: 0, kama: 0, casual: 0 },
-        tosu: { pura: 0, kama: 0, casual: 0 },
-        horse: { pura: 0, kama: 0, casual: 0 },
+        quest: { pura: 0, kama: 0, casual: 0, entries: [] },
+        tosu: { pura: 0, kama: 0, casual: 0, entries: [] },
+        horse: { pura: 0, kama: 0, casual: 0, entries: [] },
       };
     }
 
@@ -46,18 +46,18 @@ module.exports = {
       const [questMsg, tosuMsg, horseMsg] = await Promise.all([
         questChannel.send({
           embeds: [buildPanelEmbed('quest', state.counts.quest)],
-          components: buildPanelButtons('quest'), // ← そのまま渡す
-          content: '', // undefinedはNG
+          components: buildPanelButtons('quest'),
+          content: '',
         }),
         tosuChannel.send({
           embeds: [buildPanelEmbed('tosu', state.counts.tosu)],
-          components: buildPanelButtons('tosu'), // ← そのまま渡す
-          content: '', // undefinedはNG
+          components: buildPanelButtons('tosu'),
+          content: '',
         }),
         horseChannel.send({
           embeds: [buildPanelEmbed('horse', state.counts.horse)],
-          components: buildPanelButtons('horse'), // ← そのまま渡す
-          content: '', // undefinedはNG
+          components: buildPanelButtons('horse'),
+          content: '',
         }),
       ]);
 
@@ -82,10 +82,10 @@ module.exports = {
 
       await writeState(guildId, state);
 
-      await interaction.reply({ content: '✅ ひっかけ一覧パネルを設置しました。', ephemeral: true });
+      await interaction.reply({ content: '✅ ひっかけ一覧パネルを設置しました。', flags: 64 });
     } catch (error) {
       console.error('[ひっかけ一覧設置] エラー:', error);
-      await interaction.reply({ content: '❌ パネル設置に失敗しました。管理者にお問い合わせください。', ephemeral: true });
+      await interaction.reply({ content: '❌ パネル設置に失敗しました。管理者にお問い合わせください。', flags: 64 });
     }
   }
 };

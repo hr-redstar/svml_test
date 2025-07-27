@@ -3,6 +3,7 @@
 const { readState, writeState } = require('../utils/hikkakeStateManager');
 const { buildPanelEmbed, buildPanelButtons } = require('../utils/panelBuilder');
 const { logToThread } = require('../utils/threadLogger');
+const { InteractionResponseFlags } = require('discord.js');
 
 module.exports = {
   customId: /^hikkake_(quest|tosu|horse)_order_select$/,
@@ -14,7 +15,7 @@ module.exports = {
       const selected = parseInt(interaction.values[0], 10);
 
       if (isNaN(selected) || selected < 1) {
-        await interaction.reply({ content: '無効な選択です。1人以上を選んでください。', ephemeral: true });
+        await interaction.reply({ content: '無効な選択です。1人以上を選んでください。', flags: InteractionResponseFlags.Ephemeral });
         return;
       }
 
@@ -54,14 +55,14 @@ module.exports = {
 
       await writeState(guildId, state);
 
-      // buildPanelButtonsは配列を返す想定に修正
+      // buildPanelButtonsは配列を返すのでそのまま渡す
       const embed = buildPanelEmbed(type, total);
       const components = buildPanelButtons(type);
 
       if (total.messageId) {
         try {
           const msg = await interaction.channel.messages.fetch(total.messageId);
-          await msg.edit({ embeds: [embed], components });
+          await msg.edit({ embeds: [embed], components, content: '' }); // content: '' を明示
         } catch (e) {
           console.warn(`[メッセージ更新失敗][${type}]`, e);
         }
@@ -82,12 +83,12 @@ module.exports = {
 
       await interaction.reply({
         content: `${selected}人受注を記録しました。`,
-        ephemeral: true,
+        flags: InteractionResponseFlags.Ephemeral,
       });
     } catch (err) {
       console.error('[hikkakeOrderSelect] エラー:', err);
       if (!interaction.replied && !interaction.deferred) {
-        await interaction.reply({ content: '処理中にエラーが発生しました。', ephemeral: true });
+        await interaction.reply({ content: '処理中にエラーが発生しました。', flags: InteractionResponseFlags.Ephemeral });
       }
     }
   },

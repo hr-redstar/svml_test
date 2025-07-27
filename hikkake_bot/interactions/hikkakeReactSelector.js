@@ -1,6 +1,6 @@
 // interactions/hikkakeReactSelector.js
 
-const { StringSelectMenuBuilder, ActionRowBuilder } = require('discord.js');
+const { StringSelectMenuBuilder, ActionRowBuilder, InteractionResponseFlags } = require('discord.js');
 
 module.exports = {
   customId: /^set_react_(quest|tosu|horse)_(num|count)$/,  // 正規表現で共通化
@@ -41,12 +41,12 @@ module.exports = {
       await interaction.reply({
         content: `✅ ${typeLabel} の ${targetLabel}数を選択してください。`,
         components: [row],
-        ephemeral: true,
+        flags: InteractionResponseFlags.Ephemeral,
       });
     } catch (error) {
       console.error('[hikkakeReactSelector] エラー:', error);
       if (!interaction.replied && !interaction.deferred) {
-        await interaction.reply({ content: '選択肢の表示中にエラーが発生しました。', ephemeral: true });
+        await interaction.reply({ content: '選択肢の表示中にエラーが発生しました。', flags: InteractionResponseFlags.Ephemeral });
       }
     }
   },

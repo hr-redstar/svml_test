@@ -51,7 +51,7 @@ function ensureStateStructure(state) {
     if (!state.logs[type]) state.logs[type] = {};
 
     // counts の構造を getDefaultState と合わせる
-    if (!state.counts[type]) {
+    if (!state.counts[type] || typeof state.counts[type] !== 'object') {
       state.counts[type] = { pura: 0, kama: 0, casual: 0, entries: [] };
     }
 
@@ -62,8 +62,9 @@ function ensureStateStructure(state) {
     if (typeof ct.casual !== 'number') ct.casual = 0;
     if (!Array.isArray(ct.entries)) ct.entries = [];
 
-    // 古いプロパティを削除してデータをクリーンに保つ
-    delete ct.bottles;
+    // 古いプロパティや不要なプロパティを削除
+    if ('bottles' in ct) delete ct.bottles;
+    // 今後不要なプロパティがあればここで削除
   }
 
   return state;

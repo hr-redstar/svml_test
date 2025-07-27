@@ -19,7 +19,8 @@ async function getGuild(guildId) {
     if (cachedGuild) return cachedGuild;
 
     // キャッシュになければAPIから取得
-    return await client.guilds.fetch(guildId);
+    const fetchedGuild = await client.guilds.fetch(guildId);
+    return fetchedGuild ?? null;
   } catch (error) {
     console.warn(`[getGuild] Failed to fetch guild (${guildId}): ${error.message}`);
     return null;

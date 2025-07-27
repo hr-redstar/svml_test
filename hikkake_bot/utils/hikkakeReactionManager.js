@@ -64,7 +64,7 @@ async function writeReactions(guildId, reactionsData) {
  */
 function getRandomReaction(reactions, type, key) {
   const list = (reactions?.[type]?.[key] || []);
-  if (list.length === 0) return null;
+  if (!Array.isArray(list) || list.length === 0) return null;
   return list[Math.floor(Math.random() * list.length)];
 }
 

@@ -2,7 +2,8 @@
 
 const { readState, writeState } = require('../utils/hikkakeStateManager');
 const { buildPanelEmbed, buildPanelButtons } = require('../utils/panelBuilder');
-const { logToThread } = require('../utils/threadLogger'); // ログ出力用
+const { logToThread } = require('../utils/threadLogger');
+const { InteractionResponseFlags } = require('discord.js');
 
 module.exports = {
   customId: /^hikkake_(quest|tosu|horse)_plakama_select$/,
@@ -14,7 +15,7 @@ module.exports = {
       const channelId = interaction.channelId;
 
       if (isNaN(selected) || selected < 1) {
-        return await interaction.reply({ content: '人数が不正です。', ephemeral: true });
+        return await interaction.reply({ content: '人数が不正です。', flags: InteractionResponseFlags.Ephemeral });
       }
 
       const state = await readState(guildId);
@@ -51,7 +52,7 @@ module.exports = {
         const messageId = state[type][channelId].messageId;
         if (messageId) {
           const msg = await interaction.channel.messages.fetch(messageId);
-          await msg.edit({ embeds: [updatedEmbed], components });
+          await msg.edit({ embeds: [updatedEmbed], components, content: '' }); // content: '' を明示
         } else {
           console.warn(`[hikkakePlakamaSelect] messageId未設定のため編集できません。`);
         }
@@ -71,11 +72,11 @@ module.exports = {
         console.warn('[hikkakePlakamaSelect] ログ出力失敗:', e);
       }
 
-      await interaction.reply({ content: `${selected}人のプラが追加されました。`, ephemeral: true });
+      await interaction.reply({ content: `${selected}人のプラが追加されました。`, flags: InteractionResponseFlags.Ephemeral });
     } catch (error) {
       console.error('[hikkakePlakamaSelect] エラー:', error);
       if (!interaction.replied && !interaction.deferred) {
-        await interaction.reply({ content: '処理中にエラーが発生しました。', ephemeral: true });
+        await interaction.reply({ content: '処理中にエラーが発生しました。', flags: InteractionResponseFlags.Ephemeral });
       }
     }
   }

@@ -31,9 +31,9 @@ function buildPanelEmbed(type, counts = {}) {
   return new EmbedBuilder()
     .setTitle('■店内状況')
     .setDescription(
-      `【クエスト】\nプラ　${counts.pura || 0}　カマ　${counts.kama || 0}\n` +
-      `【凸スナ】\nプラ　${counts.pura || 0}　カマ　${counts.kama || 0}\n` +
-      `【トロイの木馬】\nプラ　${counts.pura || 0}　カマ　${counts.kama || 0}`
+      `【クエスト】\nプラ　${counts.quest?.pura || 0}　カマ　${counts.quest?.kama || 0}\n` +
+      `【凸スナ】\nプラ　${counts.tosu?.pura || 0}　カマ　${counts.tosu?.kama || 0}\n` +
+      `【トロイの木馬】\nプラ　${counts.horse?.pura || 0}　カマ　${counts.horse?.kama || 0}`
     )
     .setColor(0x0099ff)
     .setTimestamp();
@@ -43,18 +43,18 @@ function buildPanelButtons(type) {
   const row = new ActionRowBuilder().addComponents(
     // プラカマボタン（リスト選択・プラカマ入力）
     new ButtonBuilder()
-      .setCustomId(`hikkake_${type}_plakama_input`)
-      .setLabel('リスト選択 プラカマ入力')
+      .setCustomId(`hikkake_${type}_plakama`)
+      .setLabel('プラカマ')
       .setStyle(ButtonStyle.Primary),
     // 受注ボタン（プラカマ本数入力）
     new ButtonBuilder()
-      .setCustomId(`hikkake_${type}_order_input`)
-      .setLabel('受注 プラカマ本数入力')
+      .setCustomId(`hikkake_${type}_order`)
+      .setLabel('受注')
       .setStyle(ButtonStyle.Success),
     // ふらっと来たボタン（プラカマ入力）
     new ButtonBuilder()
-      .setCustomId(`hikkake_${type}_casual_input`)
-      .setLabel('ふらっと来た プラカマ入力')
+      .setCustomId(`hikkake_${type}_casual`)
+      .setLabel('ふらっと来た')
       .setStyle(ButtonStyle.Secondary)
   );
 

@@ -9,20 +9,24 @@ module.exports = {
    * @param {string} title 
    * @param {string} label 
    * @param {string} placeholder 
-   * @param {string} defaultValue 
+   * @param {string} [defaultValue] 省略可
+   * @returns {ModalBuilder}
    */
-  createReactionSettingModal(customId, title, label, placeholder, defaultValue = '') {
+  createReactionSettingModal(customId, title, label, placeholder, defaultValue) {
     const modal = new ModalBuilder()
       .setCustomId(customId)
       .setTitle(title);
-    
+
     const input = new TextInputBuilder()
       .setCustomId('reactionTexts')
       .setLabel(label)
       .setStyle(TextInputStyle.Paragraph)
       .setPlaceholder(placeholder)
-      .setRequired(true)
-      .setValue(defaultValue);
+      .setRequired(true);
+
+    if (defaultValue !== undefined) {
+      input.setValue(defaultValue);
+    }
 
     const row = new ActionRowBuilder().addComponents(input);
     modal.addComponents(row);
@@ -35,9 +39,10 @@ module.exports = {
    * @param {string} title 
    * @param {string} label 
    * @param {string} placeholder 
-   * @param {string} defaultValue 
+   * @param {string} [defaultValue] 省略可
+   * @returns {ModalBuilder}
    */
-  createNumberInputModal(customId, title, label, placeholder, defaultValue = '') {
+  createNumberInputModal(customId, title, label, placeholder, defaultValue) {
     const modal = new ModalBuilder()
       .setCustomId(customId)
       .setTitle(title);
@@ -47,8 +52,11 @@ module.exports = {
       .setLabel(label)
       .setStyle(TextInputStyle.Short)
       .setPlaceholder(placeholder)
-      .setRequired(true)
-      .setValue(defaultValue);
+      .setRequired(true);
+
+    if (defaultValue !== undefined) {
+      input.setValue(defaultValue);
+    }
 
     const row = new ActionRowBuilder().addComponents(input);
     modal.addComponents(row);

@@ -57,7 +57,8 @@ async function updateAllHikkakePanels(client, guildId, state) {
 
       const components = buildPanelButtons(type);
 
-      await message.edit({ embeds: [embed], components });
+      // 修正: content: '' を明示
+      await message.edit({ embeds: [embed], components, content: '' });
     }
   } catch (err) {
     console.error('[updateAllHikkakePanels] 想定外のエラー:', err);
@@ -114,6 +115,7 @@ function buildPanelButtons(type) {
       .setStyle(ButtonStyle.Secondary)
   );
 
+  // 返り値は1次元配列で返す（呼び出し側で二重配列にしないこと！）
   return [row];
 }
 

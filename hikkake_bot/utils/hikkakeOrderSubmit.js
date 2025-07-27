@@ -3,6 +3,7 @@
 const { readState, writeState } = require('./hikkakeStateManager');
 const { buildPanelEmbed, buildPanelButtons } = require('./panelBuilder');
 const { logToThread } = require('./threadLogger');
+const { InteractionResponseFlags } = require('discord.js');
 
 async function updateAllPanels(interaction, state) {
   for (const key of ['quest', 'tosu', 'horse']) {
@@ -24,7 +25,7 @@ async function updateAllPanels(interaction, state) {
       });
 
       const buttons = buildPanelButtons(key);
-      await msg.edit({ embeds: [embed], components: buttons });
+      await msg.edit({ embeds: [embed], components: buttons, content: '' }); // content: '' を明示
     } catch (e) {
       console.warn(`[hikkakeOrderSubmit] パネル更新失敗: ${key}`, e.message);
     }
@@ -41,7 +42,7 @@ module.exports = {
     const orderCount = parseInt(orderCountInput, 10);
 
     if (isNaN(orderCount) || orderCount < 0) {
-      return interaction.editReply({ content: '受注人数は0以上の半角数字で入力してください。' });
+      return interaction.editReply({ content: '受注人数は0以上の半角数字で入力してください。', flags: InteractionResponseFlags.Ephemeral });
     }
 
     const guildId = interaction.guildId;
@@ -49,7 +50,7 @@ module.exports = {
 
     if (!state.counts) state.counts = {};
     if (!state.counts[type]) {
-      return interaction.editReply({ content: '対象のデータが見つかりません。' });
+      return interaction.editReply({ content: '対象のデータが見つかりません。', flags: InteractionResponseFlags.Ephemeral });
     }
     if (!state.orders) state.orders = {};
     if (typeof state.orders[type] !== 'number') state.orders[type] = 0;
@@ -88,6 +89,6 @@ module.exports = {
     if (notFulfilled > 0) {
       replyMessage += ` (${notFulfilled}人分は不足していました。)`;
     }
-    await interaction.editReply({ content: replyMessage });
+    await interaction.editReply({ content: replyMessage, flags: InteractionResponseFlags.Ephemeral });
   }
 };

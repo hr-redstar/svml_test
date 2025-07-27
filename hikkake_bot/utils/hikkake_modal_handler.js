@@ -1,4 +1,4 @@
-// hikkake_bot/utils/hikkake_modals.js
+// hikkake_bot/utils/hikkake_modal_handler.js
 
 const { ModalBuilder, TextInputBuilder, TextInputStyle, ActionRowBuilder } = require('discord.js');
 

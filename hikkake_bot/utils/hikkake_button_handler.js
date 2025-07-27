@@ -17,20 +17,33 @@ module.exports = {
       let match = customId.match(/^hikkake_(quest|tosu|horse)_plakama$/);
       if (match) {
         const type = match[1];
-        const options = Array.from({ length: 25 }, (_, i) => ({
-          label: `${i + 1}人`,
-          value: `${i + 1}`,
+        // プラ人数選択
+        const puraOptions = Array.from({ length: 25 }, (_, i) => ({
+          label: `プラ ${i + 1}人`,
+          value: `pura_${i + 1}`,
         }));
-        const selectMenu = new StringSelectMenuBuilder()
-          .setCustomId(`hikkake_${type}_plakama_select`)
-          .setPlaceholder('プラカマ人数を選択してください（1〜25）')
-          .addOptions(options);
+        // カマ人数選択
+        const kamaOptions = Array.from({ length: 25 }, (_, i) => ({
+          label: `カマ ${i + 1}人`,
+          value: `kama_${i + 1}`,
+        }));
 
-        const row = new ActionRowBuilder().addComponents(selectMenu);
+        const puraSelect = new StringSelectMenuBuilder()
+          .setCustomId(`hikkake_${type}_plakama_pura_select`)
+          .setPlaceholder('プラ人数を選択してください（1〜25）')
+          .addOptions(puraOptions);
+
+        const kamaSelect = new StringSelectMenuBuilder()
+          .setCustomId(`hikkake_${type}_plakama_kama_select`)
+          .setPlaceholder('カマ人数を選択してください（1〜25）')
+          .addOptions(kamaOptions);
+
+        const row1 = new ActionRowBuilder().addComponents(puraSelect);
+        const row2 = new ActionRowBuilder().addComponents(kamaSelect);
 
         await interaction.reply({
-          content: `【${type.toUpperCase()}】プラカマ人数を選んでください。`,
-          components: [row],
+          content: `【${type.toUpperCase()}】プラ・カマ人数を選んでください。`,
+          components: [row1, row2],
           flags: InteractionResponseFlags.Ephemeral,
         });
         return true;
@@ -40,20 +53,44 @@ module.exports = {
       match = customId.match(/^hikkake_(quest|tosu|horse)_order$/);
       if (match) {
         const type = match[1];
-        const options = Array.from({ length: 25 }, (_, i) => ({
-          label: `${i}人`,
-          value: `${i}`,
+        // プラ人数
+        const puraOptions = Array.from({ length: 25 }, (_, i) => ({
+          label: `プラ ${i + 1}人`,
+          value: `pura_${i + 1}`,
         }));
-        const selectMenu = new StringSelectMenuBuilder()
-          .setCustomId(`hikkake_${type}_order_select`)
-          .setPlaceholder('受注人数を選択してください（0〜24）')
-          .addOptions(options);
+        // カマ人数
+        const kamaOptions = Array.from({ length: 25 }, (_, i) => ({
+          label: `カマ ${i + 1}人`,
+          value: `kama_${i + 1}`,
+        }));
+        // 本数(ボトル)
+        const bottleOptions = Array.from({ length: 25 }, (_, i) => ({
+          label: `本数 ${i + 1}`,
+          value: `bottle_${i + 1}`,
+        }));
 
-        const row = new ActionRowBuilder().addComponents(selectMenu);
+        const puraSelect = new StringSelectMenuBuilder()
+          .setCustomId(`hikkake_${type}_order_pura_select`)
+          .setPlaceholder('プラ人数を選択してください（1〜25）')
+          .addOptions(puraOptions);
+
+        const kamaSelect = new StringSelectMenuBuilder()
+          .setCustomId(`hikkake_${type}_order_kama_select`)
+          .setPlaceholder('カマ人数を選択してください（1〜25）')
+          .addOptions(kamaOptions);
+
+        const bottleSelect = new StringSelectMenuBuilder()
+          .setCustomId(`hikkake_${type}_order_bottle_select`)
+          .setPlaceholder('本数(ボトル)を選択してください（1〜25）')
+          .addOptions(bottleOptions);
+
+        const row1 = new ActionRowBuilder().addComponents(puraSelect);
+        const row2 = new ActionRowBuilder().addComponents(kamaSelect);
+        const row3 = new ActionRowBuilder().addComponents(bottleSelect);
 
         await interaction.reply({
-          content: `【${type.toUpperCase()}】受注人数を選んでください。`,
-          components: [row],
+          content: `【${type.toUpperCase()}】プラ・カマ人数と本数(ボトル)を選んでください。`,
+          components: [row1, row2, row3],
           flags: InteractionResponseFlags.Ephemeral,
         });
         return true;
@@ -63,24 +100,40 @@ module.exports = {
       match = customId.match(/^hikkake_(quest|tosu|horse)_casual$/);
       if (match) {
         const type = match[1];
-        const options = Array.from({ length: 25 }, (_, i) => ({
-          label: `${i + 1}人`,
-          value: `${i + 1}`,
+        // プラ人数
+        const puraOptions = Array.from({ length: 25 }, (_, i) => ({
+          label: `プラ ${i + 1}人`,
+          value: `pura_${i + 1}`,
         }));
-        const selectMenu = new StringSelectMenuBuilder()
-          .setCustomId(`hikkake_${type}_casual_select`)
-          .setPlaceholder('ふらっと来た人数を選択してください（1〜25）')
-          .addOptions(options);
+        // カマ人数
+        const kamaOptions = Array.from({ length: 25 }, (_, i) => ({
+          label: `カマ ${i + 1}人`,
+          value: `kama_${i + 1}`,
+        }));
 
-        const row = new ActionRowBuilder().addComponents(selectMenu);
+        const puraSelect = new StringSelectMenuBuilder()
+          .setCustomId(`hikkake_${type}_casual_pura_select`)
+          .setPlaceholder('プラ人数を選択してください（1〜25）')
+          .addOptions(puraOptions);
+
+        const kamaSelect = new StringSelectMenuBuilder()
+          .setCustomId(`hikkake_${type}_casual_kama_select`)
+          .setPlaceholder('カマ人数を選択してください（1〜25）')
+          .addOptions(kamaOptions);
+
+        const row1 = new ActionRowBuilder().addComponents(puraSelect);
+        const row2 = new ActionRowBuilder().addComponents(kamaSelect);
 
         await interaction.reply({
-          content: `【${type.toUpperCase()}】ふらっと来た人数を選んでください。`,
-          components: [row],
+          content: `【${type.toUpperCase()}】ふらっと来た プラ・カマ人数を選んでください。`,
+          components: [row1, row2],
           flags: InteractionResponseFlags.Ephemeral,
         });
         return true;
       }
+
+      // クエストでボタン入力時は【クエスト】プラ カマ だけを更新する処理をここで実装
+      // 例: if (type === 'quest') { ...クエスト部分だけ更新... }
 
       return false;
     } catch (error) {

@@ -24,6 +24,4 @@ module.exports = {
   hikkakeSetup,
   hikkakeStateManager,
   hikkakePanelManager,
-  hikkakeReactionFetcher,
-  hikkakeThreadLogger,
 };

@@ -3,8 +3,8 @@
 const { ActionRowBuilder, StringSelectMenuBuilder } = require('discord.js');
 
 const ranges = {
-  purakama: [1, 25, '人'],    // ラベル「人数」→「人」など短くしても良いかも
-  juchu: [0, 24, '人'],       // 「本数」は「人」に変更していますが、必要なら元に戻してOK
+  purakama: [1, 25, '人'],    // 「人数」→「人」
+  juchu: [1, 25, '人'],       // 0人は選択肢から除外（1〜25人）
   furatto: [1, 25, '人'],
 };
 
@@ -12,7 +12,7 @@ function createSelectOptions(min, max, labelSuffix) {
   const options = [];
   for (let i = min; i <= max; i++) {
     options.push({
-      label: `${i}${labelSuffix}`,  // 「1人」など見やすく
+      label: `${i}${labelSuffix}`,
       value: i.toString(),
     });
   }
