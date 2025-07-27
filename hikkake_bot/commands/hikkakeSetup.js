@@ -46,15 +46,18 @@ module.exports = {
       const [questMsg, tosuMsg, horseMsg] = await Promise.all([
         questChannel.send({
           embeds: [buildPanelEmbed('quest', state.counts.quest)],
-          components: [buildPanelButtons('quest')]
+          components: buildPanelButtons('quest'), // ← そのまま渡す
+          content: '', // undefinedはNG
         }),
         tosuChannel.send({
           embeds: [buildPanelEmbed('tosu', state.counts.tosu)],
-          components: [buildPanelButtons('tosu')]
+          components: buildPanelButtons('tosu'), // ← そのまま渡す
+          content: '', // undefinedはNG
         }),
         horseChannel.send({
           embeds: [buildPanelEmbed('horse', state.counts.horse)],
-          components: [buildPanelButtons('horse')]
+          components: buildPanelButtons('horse'), // ← そのまま渡す
+          content: '', // undefinedはNG
         }),
       ]);
 

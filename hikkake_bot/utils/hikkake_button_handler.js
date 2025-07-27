@@ -1,5 +1,5 @@
 // hikkake_bot/utils/hikkake_button_handler.js
-const { StringSelectMenuBuilder, ActionRowBuilder } = require('discord.js');
+const { StringSelectMenuBuilder, ActionRowBuilder, InteractionResponseFlags } = require('discord.js');
 
 module.exports = {
   /**
@@ -31,7 +31,7 @@ module.exports = {
         await interaction.reply({
           content: `【${type.toUpperCase()}】プラカマ人数を選んでください。`,
           components: [row],
-          ephemeral: true,
+          flags: InteractionResponseFlags.Ephemeral,
         });
         return true;
       }
@@ -54,7 +54,7 @@ module.exports = {
         await interaction.reply({
           content: `【${type.toUpperCase()}】受注人数を選んでください。`,
           components: [row],
-          ephemeral: true,
+          flags: InteractionResponseFlags.Ephemeral,
         });
         return true;
       }
@@ -77,7 +77,7 @@ module.exports = {
         await interaction.reply({
           content: `【${type.toUpperCase()}】ふらっと来た人数を選んでください。`,
           components: [row],
-          ephemeral: true,
+          flags: InteractionResponseFlags.Ephemeral,
         });
         return true;
       }
@@ -87,7 +87,7 @@ module.exports = {
       console.error('[hikkake_button_handler] ボタン処理エラー:', error);
       if (!interaction.replied && !interaction.deferred) {
         try {
-          await interaction.reply({ content: 'ボタン処理中にエラーが発生しました。', ephemeral: true });
+          await interaction.reply({ content: 'ボタン処理中にエラーが発生しました。', flags: InteractionResponseFlags.Ephemeral });
         } catch (e) {
           console.error('[hikkake_button_handler] エラー返信失敗:', e);
         }
