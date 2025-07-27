@@ -1,49 +1,68 @@
 // utils/hikkakePanelManager.js
 
 const { EmbedBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle } = require('discord.js');
-const { readState } = require('./hikkakeStateManager');
-const { getGuild } = require('./discordUtils'); // Guild取得補助（未実装なら別途作成）
 
 /**
  * すべてのhikkakeパネルを更新
+ * @param {import('discord.js').Client} client
  * @param {string} guildId 
  * @param {object} state 
  */
-async function updateAllHikkakePanels(guildId, state) {
-  const guild = await getGuild(guildId);
-  if (!guild) return;
-
-  const panelTypes = ['quest', 'tosu', 'horse'];
-
-  for (const type of panelTypes) {
-    const panelInfo = state[type]?.panel;
-    const currentData = state[type] || {};
-
-    if (!panelInfo || !Array.isArray(panelInfo)) continue;
-
-    for (const { channelId, messageId } of panelInfo) {
-      try {
-        const channel = await guild.channels.fetch(channelId);
-        if (!channel) continue;
-
-        const message = await channel.messages.fetch(messageId);
-        if (!message) continue;
-
-        const embed = buildPanelEmbed(type, currentData);
-        const components = buildPanelButtons(type);
-
-        await message.edit({ embeds: [embed], components });
-      } catch (err) {
-        console.warn(`[updateAllHikkakePanels] Failed to update ${type} panel in channel ${channelId}:`, err.message);
-      }
+async function updateAllHikkakePanels(client, guildId, state) {
+  try {
+    const guild = await client.guilds.fetch(guildId);
+    if (!guild) {
+      console.warn(`[updateAllHikkakePanels] ギルド取得失敗: ${guildId}`);
+      return;
     }
+
+    const panelTypes = ['quest', 'tosu', 'horse'];
+
+    for (const type of panelTypes) {
+      const panelInfo = state.panelMessages?.[type];
+      if (!panelInfo) {
+        console.warn(`[updateAllHikkakePanels] panelMessagesに${type}の情報がありません`);
+        continue;
+      }
+
+      const channel = await guild.channels.fetch(panelInfo.channelId).catch(() => null);
+      if (!channel) {
+        console.warn(`[updateAllHikkakePanels] チャンネル取得失敗: ${panelInfo.channelId}`);
+        continue;
+      }
+
+      const message = await channel.messages.fetch(panelInfo.messageId).catch(() => null);
+      if (!message) {
+        console.warn(`[updateAllHikkakePanels] メッセージ取得失敗: ${panelInfo.messageId}`);
+        continue;
+      }
+
+      // countsとordersはstateにあると仮定
+      const counts = state.counts?.[type] || { pura: 0, kama: 0, casual: 0 };
+      const orderCount = state.orders?.[type] ?? 0;
+
+      const embed = buildPanelEmbed(type, { 
+        plakama: (counts.pura ?? 0) + (counts.kama ?? 0),
+        flat: counts.casual ?? 0,
+        order: orderCount,
+      });
+
+      const components = buildPanelButtons(type);
+
+      await message.edit({ embeds: [embed], components });
+    }
+  } catch (err) {
+    console.error('[updateAllHikkakePanels] 想定外のエラー:', err);
   }
 }
 
 /**
  * パネル用のEmbedを生成
  * @param {'quest' | 'tosu' | 'horse'} type 
- * @param {object} data 
+ * @param {object} data
+ * @param {number} data.plakama プラ＋カマ人数合計
+ * @param {number} data.flat ふらっと来ちゃった人数
+ * @param {number} data.order 受注人数
  * @returns {EmbedBuilder}
  */
 function buildPanelEmbed(type, data) {
@@ -53,25 +72,21 @@ function buildPanelEmbed(type, data) {
     horse: '🐴 トロイの木馬一覧',
   };
 
-  const embed = new EmbedBuilder()
-    .setTitle(titleMap[type])
+  return new EmbedBuilder()
+    .setTitle(titleMap[type] || '一覧')
     .setDescription(
-      [
-        `👥 **受注人数：** ${data.order ?? 0}`,
-        `📌 **プラカマ：** ${data.plakama ?? 0}`,
-        `🚶 **ふらっと来ちゃった：** ${data.flat ?? 0}`,
-      ].join('\n')
+      `📦 **受注人数:** ${data.order ?? 0}人\n` +
+      `👥 **プラカマ人数:** ${data.plakama ?? 0}人\n` +
+      `🚶‍♂️ **ふらっと来ちゃった:** ${data.flat ?? 0}人`
     )
     .setColor(0x0099ff)
-    .setFooter({ text: `最終更新：${new Date().toLocaleString('ja-JP')}` });
-
-  return embed;
+    .setFooter({ text: `最終更新: ${new Date().toLocaleString('ja-JP')}` });
 }
 
 /**
  * パネル用ボタンを生成
  * @param {'quest' | 'tosu' | 'horse'} type 
- * @returns {ActionRowBuilder[]}
+ * @returns {import('discord.js').ActionRowBuilder[]}
  */
 function buildPanelButtons(type) {
   const row = new ActionRowBuilder().addComponents(

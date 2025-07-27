@@ -1,12 +1,22 @@
 // utils/discordUtils.js
 
-const { client } = require('../client'); // クライアント本体
+const { client } = require('../client');
 
+/**
+ * ギルドをキャッシュ優先で取得し、なければAPIからフェッチ
+ * @param {string} guildId
+ * @returns {Promise<import('discord.js').Guild|null>}
+ */
 async function getGuild(guildId) {
   try {
+    // キャッシュにあれば即返す
+    const cachedGuild = client.guilds.cache.get(guildId);
+    if (cachedGuild) return cachedGuild;
+
+    // キャッシュになければAPIから取得
     return await client.guilds.fetch(guildId);
-  } catch (e) {
-    console.warn(`[getGuild] Guild fetch failed: ${e.message}`);
+  } catch (error) {
+    console.warn(`[getGuild] Failed to fetch guild (${guildId}): ${error.message}`);
     return null;
   }
 }

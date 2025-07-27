@@ -12,9 +12,18 @@ async function updateAllPanels(interaction, state) {
     try {
       const channel = await interaction.client.channels.fetch(panelInfo.channelId);
       const msg = await channel.messages.fetch(panelInfo.messageId);
-      const embed = buildPanelEmbed(key, state.counts?.[key]);
+
+      const counts = state.counts?.[key] || { pura: 0, kama: 0, casual: 0 };
+      const orderCount = state.orders?.[key] ?? 0;
+
+      const embed = buildPanelEmbed(key, {
+        plakama: (counts.pura ?? 0) + (counts.kama ?? 0),
+        flat: counts.casual ?? 0,
+        order: orderCount,
+      });
+
       const buttons = buildPanelButtons(key);
-      await msg.edit({ embeds: [embed], components: [buttons] });
+      await msg.edit({ embeds: [embed], components: buttons });
     } catch (e) {
       console.warn(`[hikkakeCasualSubmit] パネル更新失敗: ${key}`, e.message);
     }

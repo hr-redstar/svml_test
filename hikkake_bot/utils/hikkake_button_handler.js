@@ -1,35 +1,11 @@
 // hikkake_bot/utils/hikkake_button_handler.js
-const { StringSelectMenuBuilder, ActionRowBuilder, StringSelectMenuOptionBuilder } = require('discord.js');
-
-/**
- * 数値選択用のセレクトメニューコンポーネントを作成するヘルパー関数
- * @param {string} customId - セレクトメニューのカスタムID
- * @param {string} placeholder - プレースホルダーのテキスト
- * @param {number} start - 選択肢の開始番号
- * @param {number} end - 選択肢の終了番号
- * @param {string} labelSuffix - 選択肢ラベルの接尾辞 (例: '人', '本')
- * @returns {ActionRowBuilder<StringSelectMenuBuilder>}
- */
-const createNumberSelectMenuRow = (customId, placeholder, start, end, labelSuffix) => {
-  const options = Array.from({ length: end - start + 1 }, (_, i) => {
-    const value = start + i;
-    return new StringSelectMenuOptionBuilder()
-      .setLabel(`${value}${labelSuffix}`)
-      .setValue(value.toString());
-  });
-
-  const selectMenu = new StringSelectMenuBuilder()
-    .setCustomId(customId)
-    .setPlaceholder(placeholder)
-    .addOptions(options);
-
-  return new ActionRowBuilder().addComponents(selectMenu);
-};
+const { ModalBuilder, TextInputBuilder, TextInputStyle, ActionRowBuilder } = require('discord.js');
+const { readState } = require('./hikkakeStateManager');
 
 module.exports = {
   /**
    * ボタン押下ハンドラ
-   * @param {import('discord.js').ButtonInteraction} interaction 
+   * @param {import('discord.js').ButtonInteraction} interaction
    * @returns {Promise<boolean>} 処理したらtrue、未処理ならfalse
    */
   async execute(interaction) {
@@ -39,50 +15,80 @@ module.exports = {
 
     try {
       // プラカマボタン
-      const plakamaMatch = customId.match(/^hikkake_(quest|tosu|horse)_plakama$/);
-      if (plakamaMatch) {
-        const type = plakamaMatch[1];
-        const row = createNumberSelectMenuRow(
-          `hikkake_${type}_plakama_select`,
-          'プラカマ人数を選択してください（1～25）',
-          1, 25, '人'
+      let match = customId.match(/^hikkake_(quest|tosu|horse)_plakama$/);
+      if (match) {
+        const type = match[1];
+        const state = await readState(interaction.guildId);
+        const counts = state.counts?.[type] ?? { pura: 0, kama: 0 };
+
+        const modal = new ModalBuilder()
+          .setCustomId(`hikkake_plakama_modal_${type}`)
+          .setTitle(`【${type.toUpperCase()}】プラカマ人数設定`);
+
+        const puraInput = new TextInputBuilder()
+          .setCustomId('pura_count')
+          .setLabel('プラの人数')
+          .setStyle(TextInputStyle.Short)
+          .setValue(String(counts.pura ?? 0))
+          .setRequired(true);
+
+        const kamaInput = new TextInputBuilder()
+          .setCustomId('kama_count')
+          .setLabel('カマの人数')
+          .setStyle(TextInputStyle.Short)
+          .setValue(String(counts.kama ?? 0))
+          .setRequired(true);
+
+        modal.addComponents(
+          new ActionRowBuilder().addComponents(puraInput),
+          new ActionRowBuilder().addComponents(kamaInput)
         );
-        await interaction.reply({
-          content: `【${type.charAt(0).toUpperCase() + type.slice(1)}】のプラカマ人数を選択してください。`,
-          components: [row],
-          ephemeral: true,
-        });
+
+        await interaction.showModal(modal);
         return true;
       }
 
       // 受注ボタン
-      const orderMatch = customId.match(/^hikkake_(quest|tosu|horse)_order$/);
-      if (orderMatch) {
-        const type = orderMatch[1];
-        const row = createNumberSelectMenuRow(
-          `hikkake_${type}_order_select`,
-          '受注する人数を選択してください（0～24）',
-          0, 24, '人'
-        );
-        await interaction.reply({
-          content: `【${type.charAt(0).toUpperCase() + type.slice(1)}】の受注人数を選択してください。`,
-          components: [row],
-          ephemeral: true,
-        });
+      match = customId.match(/^hikkake_(quest|tosu|horse)_order$/);
+      if (match) {
+        const type = match[1];
+        const modal = new ModalBuilder()
+          .setCustomId(`hikkake_order_modal_${type}`)
+          .setTitle(`【${type.toUpperCase()}】受注人数入力`);
+
+        const orderInput = new TextInputBuilder()
+          .setCustomId('order_count')
+          .setLabel('受注した人数')
+          .setStyle(TextInputStyle.Short)
+          .setPlaceholder('半角数字で入力')
+          .setRequired(true);
+
+        modal.addComponents(new ActionRowBuilder().addComponents(orderInput));
+
+        await interaction.showModal(modal);
         return true;
       }
 
-      // ふらっと来たボタン (panelBuilder.jsの'casual'に合わせる)
-      const casualMatch = customId.match(/^hikkake_(quest|tosu|horse)_casual$/);
-      if (casualMatch) {
-        const type = casualMatch[1];
-        // 対応するSelectハンドラ(hikkakeFurattoSelect.js)のcustomIdに合わせる
-        const row = createNumberSelectMenuRow(
-          `hikkake_${type}_furatto_select`,
-          'ふらっと来た人数を選択してください（1～25）',
-          1, 25, '人'
-        );
-        await interaction.reply({ content: `【${type.charAt(0).toUpperCase() + type.slice(1)}】の「ふらっと来た」人数を選択してください。`, components: [row], ephemeral: true });
+      // ふらっと来たボタン
+      match = customId.match(/^hikkake_(quest|tosu|horse)_casual$/);
+      if (match) {
+        const type = match[1];
+        const state = await readState(interaction.guildId);
+        const currentCasual = String(state.counts?.[type]?.casual ?? 0);
+
+        const modal = new ModalBuilder()
+          .setCustomId(`hikkake_casual_modal_${type}`)
+          .setTitle(`【${type.toUpperCase()}】ふらっと来た人数`);
+
+        const casualInput = new TextInputBuilder()
+          .setCustomId('casual_count')
+          .setLabel('ふらっと来た人数')
+          .setStyle(TextInputStyle.Short)
+          .setValue(currentCasual)
+          .setRequired(true);
+
+        modal.addComponents(new ActionRowBuilder().addComponents(casualInput));
+        await interaction.showModal(modal);
         return true;
       }
 
@@ -90,7 +96,11 @@ module.exports = {
     } catch (error) {
       console.error('[hikkake_button_handler] ボタン処理エラー:', error);
       if (!interaction.replied && !interaction.deferred) {
-        await interaction.reply({ content: 'ボタン処理中にエラーが発生しました。', ephemeral: true });
+        try {
+          await interaction.reply({ content: 'ボタン処理中にエラーが発生しました。', ephemeral: true });
+        } catch (e) {
+          console.error('[hikkake_button_handler] エラー返信失敗:', e);
+        }
       }
       return true;
     }

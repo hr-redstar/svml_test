@@ -35,9 +35,9 @@ module.exports = {
     if (!state) state = {};
     if (!state.counts) {
       state.counts = {
-        quest: { pura: 0, kama: 0 },
-        tosu: { pura: 0, kama: 0 },
-        horse: { pura: 0, kama: 0 },
+        quest: { pura: 0, kama: 0, casual: 0 },
+        tosu: { pura: 0, kama: 0, casual: 0 },
+        horse: { pura: 0, kama: 0, casual: 0 },
       };
     }
 

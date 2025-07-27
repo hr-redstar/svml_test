@@ -9,7 +9,25 @@ const LOG_THREAD_PREFIX = {
   horse: 'トロイログ_',
 };
 
-async function logToThread(guildId, type, client, { user, count, channelName }) {
+function formatLogMessage(now, logData) {
+  const { user, logType, details, channelName } = logData;
+  const time = now.toFormat('MM/dd HH:mm');
+  const base = `📝【${time}】**${user.username}** が #${channelName} で`;
+
+  switch (logType) {
+    case 'プラカマ':
+      return `${base} **プラカマ** を更新 (プラ: ${details.pura}人, カマ: ${details.kama}人)`;
+    case '受注':
+      return `${base} **${details.requested}人** を **受注** (結果: ${details.fulfilled}人)`;
+    case 'ふらっと来た':
+      return `${base} **ふらっと来た** を更新 (${details.casual}人)`;
+    default:
+      // 以前のフォーマットとの後方互換性
+      return `📝【${time}】${logData.user.username} が **${logData.count}人** を **${logData.channelName}** で操作`;
+  }
+}
+
+async function logToThread(guildId, type, client, logData) {
   const now = DateTime.now().setZone('Asia/Tokyo');
   const logKey = now.toFormat('yyyyMM'); // 例: 202507
 
@@ -53,8 +71,7 @@ async function logToThread(guildId, type, client, { user, count, channelName }) 
   }
 
   // 投稿する内容
-  const message = `📝【${now.toFormat('MM/dd HH:mm')}】${user.username} が **${count}人** を **${channelName}** で受注`;
-
+  const message = formatLogMessage(now, logData);
   await thread.send(message);
 }
 

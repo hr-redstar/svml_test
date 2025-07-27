@@ -12,20 +12,43 @@ function getFilePath(guildId) {
 
 function getDefaultState() {
   return {
-    quest: { panel: [], order: 0, plakama: 0, flat: 0 },
-    tosu: { panel: [], order: 0, plakama: 0, flat: 0 },
-    horse: { panel: [], order: 0, plakama: 0, flat: 0 },
+    panelMessages: {
+      quest: null,
+      tosu: null,
+      horse: null,
+    },
+    counts: {
+      quest: { pura: 0, kama: 0, casual: 0 },
+      tosu: { pura: 0, kama: 0, casual: 0 },
+      horse: { pura: 0, kama: 0, casual: 0 },
+    },
+    logChannels: {
+      quest: null,
+      tosu: null,
+      horse: null,
+    },
+    logs: {
+      quest: {},
+      tosu: {},
+      horse: {},
+    }
   };
 }
 
 function ensureStateStructure(state) {
   const types = ['quest', 'tosu', 'horse'];
+  if (!state.panelMessages) state.panelMessages = {};
+  if (!state.counts) state.counts = {};
+  if (!state.logChannels) state.logChannels = {};
+  if (!state.logs) state.logs = {};
+
   for (const type of types) {
-    if (!state[type]) state[type] = { panel: [], order: 0, plakama: 0, flat: 0 };
-    if (!Array.isArray(state[type].panel)) state[type].panel = [];
-    if (typeof state[type].order !== 'number') state[type].order = 0;
-    if (typeof state[type].plakama !== 'number') state[type].plakama = 0;
-    if (typeof state[type].flat !== 'number') state[type].flat = 0;
+    if (!state.counts[type]) {
+      state.counts[type] = { pura: 0, kama: 0, casual: 0 };
+    }
+    if (typeof state.counts[type].casual !== 'number') state.counts[type].casual = 0;
+
+    if (!state.logs[type]) state.logs[type] = {};
   }
   return state;
 }

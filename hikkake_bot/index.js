@@ -1,24 +1,31 @@
-// 他のモジュール読み込み例
-const hikkakeModals = require('./hikkake_bot/utils/hikkake_modals');
-const hikkakeButtons = require('./hikkake_bot/utils/hikkake_buttons');  // ここに追加
+// hikkake_bot/index.js
 
-// 使い方例（読み込み成功確認用）
-console.log('hikkake_buttons.js 読み込み成功:', !!hikkakeButtons);
+/**
+ * hikkake_botのユーティリティモジュールまとめ読み込み
+ */
 
-// あなたの既存コードに合わせて、hikkakeButtonsの関数やオブジェクトを利用してください。
+const hikkakeModals = require('./utils/hikkake_modals');
+const hikkakeButtons = require('./utils/hikkake_buttons');
 
-// 例：exportされているボタンコンポーネントをinteractionCreateなどで使う
-// client.on('interactionCreate', async interaction => {
-//   if (interaction.isButton()) {
-//     if (interaction.customId === hikkakeButtons.someButtonId) {
-//       // ボタン押下処理
-//     }
-//   }
-// });
+/*
+// 【開発時のみ】読み込み成功確認ログ
+console.log('hikkakeButtons 読み込み成功:', !!hikkakeButtons);
+*/
+
+/**
+ * 例: interactionCreateイベントでのボタン押下時の処理例
+ * 
+ * client.on('interactionCreate', async (interaction) => {
+ *   if (interaction.isButton()) {
+ *     // 例えばカスタムIDで判定
+ *     if (interaction.customId === 'hikkake_quest_plakama') {
+ *       // hikkakeButtons の関数呼び出しなど
+ *     }
+ *   }
+ * });
+ */
 
 module.exports = {
-  // 必要に応じてexportsに含める
   hikkakeModals,
   hikkakeButtons,
-  // 他モジュールなど
 };
