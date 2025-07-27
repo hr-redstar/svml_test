@@ -45,7 +45,7 @@ module.exports = {
 
     if (interaction.customId === 'sales_report_modal') {
       const { data, error } = parseAndValidateReportData(interaction);
-      if (error) { return interaction.reply({ content: error, flags: [InteractionResponseFlags.Ephemeral] }); }
+      if (error) { return interaction.reply({ content: error, flags: InteractionResponseFlags.Ephemeral }); }
       const { normalizedDate, totalNum, cashNum, cardNum, expenseNum, balance } = data;
 
       // Embedメッセージを作成
@@ -150,7 +150,7 @@ module.exports = {
         console.error('❌ 売上報告の保存または返信中にエラー:', error);
         await interaction.reply({
           content: 'エラーが発生し、売上報告を保存できませんでした。',
-          flags: [InteractionResponseFlags.Ephemeral],
+          flags: InteractionResponseFlags.Ephemeral,
         });
       }
 
@@ -161,7 +161,7 @@ module.exports = {
       const [, originalDate, userId] = interaction.customId.split('_');
 
       const { data, error } = parseAndValidateReportData(interaction);
-      if (error) { return interaction.reply({ content: error, flags: [InteractionResponseFlags.Ephemeral] }); }
+      if (error) { return interaction.reply({ content: error, flags: InteractionResponseFlags.Ephemeral }); }
       const { normalizedDate, totalNum, cashNum, cardNum, expenseNum, balance } = data;
 
       // --- 新しいEmbedを作成 ---

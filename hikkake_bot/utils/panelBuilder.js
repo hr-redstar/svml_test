@@ -2,43 +2,58 @@
 
 const { EmbedBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle } = require('discord.js');
 
-function buildPanelEmbed(type, counts = {}) {
-  const getSafe = (obj, key, suffix = '') => obj?.[key] != null ? `${obj[key]}${suffix}` : `0${suffix}`;
+/**
+ * Builds one of the two panel embeds.
+ * @param {'status' | 'orders'} panelType - The type of panel to build.
+ * @param {'quest' | 'tosu' | 'horse'} hikkakeType - The category.
+ * @param {object} state - The current state object.
+ * @returns {EmbedBuilder}
+ */
+function buildPanelEmbed(panelType, hikkakeType, state) {
+  const staff = state.staff?.[hikkakeType] || { pura: 0, kama: 0 };
+  const orders = state.orders?.[hikkakeType] || [];
 
-  if (type === 'order') {
+  if (panelType === 'status') {
+    // Calculate available staff by subtracting staff allocated to orders
+    const allocatedPura = orders.reduce((sum, order) => sum + (order.castPura || 0), 0);
+    const allocatedKama = orders.reduce((sum, order) => sum + (order.castKama || 0), 0);
+
+    const availablePura = (staff.pura || 0) - allocatedPura;
+    const availableKama = (staff.kama || 0) - allocatedKama;
+
     return new EmbedBuilder()
-      .setTitle('🪤 受注状況パネル')
-      .setDescription(
-        `【クエスト】\n` +
-        `@${counts.quest?.user || '未設定'}\n` +
-        `組：${getSafe(counts.quest, 'group', '組')}　人数：${getSafe(counts.quest, 'member', '人')}　本数：${getSafe(counts.quest, 'count', '本')}　プラ：-${getSafe(counts.quest, 'cast', '人')}\n\n` +
-
-        `【凸スナ】\n` +
-        `@${counts.tosu?.user || '未設定'}\n` +
-        `組：${getSafe(counts.tosu, 'group', '組')}　人数：${getSafe(counts.tosu, 'member', '人')}　本数：${getSafe(counts.tosu, 'count', '本')}　プラ：-${getSafe(counts.tosu, 'cast', '人')}\n\n` +
-
-        `【トロイの木馬】\n` +
-        `@${counts.horse?.user || '未設定'}\n` +
-        `組：${getSafe(counts.horse, 'group', '組')}　人数：${getSafe(counts.horse, 'member', '人')}　本数：${getSafe(counts.horse, 'count', '本')}　プラ：-${getSafe(counts.horse, 'cast', '人')}`
+      .setTitle(`■ 店内状況 (${hikkakeType.toUpperCase()})`)
+      .addFields(
+        { name: 'プラ', value: `${availablePura}人 (基本: ${staff.pura})`, inline: true },
+        { name: 'カマ', value: `${availableKama}人 (基本: ${staff.kama})`, inline: true }
       )
-      .setColor(0x00cc99)
+      .setColor(0x0099ff)
       .setTimestamp();
   }
 
-  // 店内状況パネル
-  return new EmbedBuilder()
-    .setTitle('🪤 店内状況パネル')
-    .setDescription(
-      `【クエスト】 　　　【凸スナ】 　　 【トロイの木馬】\n` +
-      `プラ：${getSafe(counts.quest, 'pura', '人')}　　` +
-      `プラ：${getSafe(counts.tosu, 'pura', '人')}　　` +
-      `プラ：${getSafe(counts.horse, 'pura', '人')}\n` +
-      `カマ：${getSafe(counts.quest, 'kama', '人')}　　` +
-      `カマ：${getSafe(counts.tosu, 'kama', '人')}　　` +
-      `カマ：${getSafe(counts.horse, 'kama', '人')}`
-    )
-    .setColor(0x0099ff)
-    .setTimestamp();
+  if (panelType === 'orders') {
+    const embed = new EmbedBuilder()
+      .setTitle(`■ 受注一覧 (${hikkakeType.toUpperCase()})`)
+      .setColor(0x00cc99)
+      .setTimestamp();
+
+    if (orders.length === 0) {
+      embed.setDescription('現在、受注はありません。');
+    } else {
+      const description = orders.map(order => {
+        const typeLabel = order.type === 'order' ? '受注' : 'ふらっと来た';
+        const castPura = order.castPura || 0;
+        const castKama = order.castKama || 0;
+        const totalCast = castPura + castKama;
+        return `**${typeLabel}** | 人数: ${order.people}人 | 本数: ${order.bottles}本 | キャスト: -${totalCast}人 (プ:${castPura}/カ:${castKama})`;
+      }).join('\n');
+      embed.setDescription(description);
+    }
+    return embed;
+  }
+
+  // Fallback for unknown type
+  return new EmbedBuilder().setTitle('エラー').setDescription('不明なパネルタイプです。');
 }
 
 function buildPanelButtons(type) {

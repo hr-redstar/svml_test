@@ -15,14 +15,19 @@ function getFilePath(guildId) {
 function getDefaultState() {
   return {
     panelMessages: {
-      quest: null,
-      tosu: null,
-      horse: null,
+      quest: { statusMessageId: null, ordersMessageId: null, channelId: null },
+      tosu: { statusMessageId: null, ordersMessageId: null, channelId: null },
+      horse: { statusMessageId: null, ordersMessageId: null, channelId: null },
     },
-    counts: {
-      quest: { pura: 0, kama: 0, casual: 0, entries: [] },
-      tosu: { pura: 0, kama: 0, casual: 0, entries: [] },
-      horse: { pura: 0, kama: 0, casual: 0, entries: [] },
+    staff: {
+      quest: { pura: 0, kama: 0 },
+      tosu: { pura: 0, kama: 0 },
+      horse: { pura: 0, kama: 0 },
+    },
+    orders: {
+      quest: [],
+      tosu: [],
+      horse: [],
     },
     logChannels: {
       quest: null,
@@ -41,30 +46,29 @@ function ensureStateStructure(state) {
   const types = ['quest', 'tosu', 'horse'];
 
   if (!state.panelMessages) state.panelMessages = {};
-  if (!state.counts) state.counts = {};
+  if (!state.staff) state.staff = {};
+  if (!state.orders) state.orders = {};
   if (!state.logChannels) state.logChannels = {};
   if (!state.logs) state.logs = {};
 
   for (const type of types) {
-    if (!state.panelMessages[type]) state.panelMessages[type] = null;
+    if (!state.panelMessages[type] || typeof state.panelMessages[type].statusMessageId === 'undefined') {
+      state.panelMessages[type] = { statusMessageId: null, ordersMessageId: null, channelId: null };
+    }
+    if (!state.staff[type]) state.staff[type] = { pura: 0, kama: 0 };
+    if (!Array.isArray(state.orders[type])) state.orders[type] = [];
     if (!state.logChannels[type]) state.logChannels[type] = null;
     if (!state.logs[type]) state.logs[type] = {};
+  }
 
-    // counts の構造を getDefaultState と合わせる
-    if (!state.counts[type] || typeof state.counts[type] !== 'object') {
-      state.counts[type] = { pura: 0, kama: 0, casual: 0, entries: [] };
+  // --- Data Migration: Convert old `counts` to new `staff` ---
+  if (state.counts) {
+    for (const type of types) {
+      if (state.counts[type]) {
+        state.staff[type] = { pura: state.counts[type].pura || 0, kama: state.counts[type].kama || 0 };
+      }
     }
-
-    // 安全チェックと初期化を新しい構造に合わせる
-    const ct = state.counts[type];
-    if (typeof ct.pura !== 'number') ct.pura = 0;
-    if (typeof ct.kama !== 'number') ct.kama = 0;
-    if (typeof ct.casual !== 'number') ct.casual = 0;
-    if (!Array.isArray(ct.entries)) ct.entries = [];
-
-    // 古いプロパティや不要なプロパティを削除
-    if ('bottles' in ct) delete ct.bottles;
-    // 今後不要なプロパティがあればここで削除
+    delete state.counts; // Remove old structure
   }
 
   return state;

@@ -7,12 +7,13 @@ const {
   InteractionResponseFlags,
 } = require('discord.js');
 
-function createOptions(count, labelSuffix = '人', valueOffset = 0, labelPrefix = '') {
-  return Array.from({ length: count }, (_, i) =>
-    new StringSelectMenuOptionBuilder()
-      .setLabel(`${labelPrefix}${i + valueOffset}${labelSuffix}`)
-      .setValue(`${i + valueOffset}`)
-  );
+function createOptions(count, labelSuffix = '人', start = 1, labelPrefix = '') {
+  return Array.from({ length: count }, (_, i) => {
+    const value = i + start;
+    return new StringSelectMenuOptionBuilder()
+      .setLabel(`${labelPrefix}${value}${labelSuffix}`)
+      .setValue(`${value}`);
+  });
 }
 
 module.exports = {
@@ -24,20 +25,22 @@ module.exports = {
 
       const type = match[1]; // quest / tosu / horse
 
-      // メニュー作成
+      // 受注人数（1〜25）
       const personMenu = new StringSelectMenuBuilder()
         .setCustomId(`hikkake_${type}_order_person`)
         .setPlaceholder('受注人数を選択（1〜25）')
         .addOptions(createOptions(25, '人', 1));
 
+      // 受注本数（0〜10）
       const countMenu = new StringSelectMenuBuilder()
         .setCustomId(`hikkake_${type}_order_count`)
         .setPlaceholder('受注本数を選択（0〜10）')
-        .addOptions(createOptions(11, '本', 0));
+        .addOptions(createOptions(11, '本', 0)); // 0〜10本
 
+      // キャスト予定人数（-0〜-25）
       const castMenu = new StringSelectMenuBuilder()
         .setCustomId(`hikkake_${type}_order_cast`)
-        .setPlaceholder('キャスト予定人数（-人）')
+        .setPlaceholder('キャスト予定人数（-0〜-25）')
         .addOptions(createOptions(26, '人', 0, '-'));
 
       const rows = [

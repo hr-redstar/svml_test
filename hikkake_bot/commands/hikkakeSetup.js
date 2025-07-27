@@ -1,6 +1,6 @@
 // commands/hikkakeSetup.js
 const { SlashCommandBuilder, ChannelType, PermissionFlagsBits } = require('discord.js');
-const { writeState, readState } = require('../utils/hikkakeStateManager');
+const { writeState, readState, getDefaultState } = require('../utils/hikkakeStateManager');
 const { buildPanelEmbed, buildPanelButtons } = require('../utils/panelBuilder');
 
 module.exports = {
@@ -31,54 +31,36 @@ module.exports = {
     const horseChannel = interaction.options.getChannel('horse_channel');
 
     // state読み込み・初期化
-    let state = await readState(guildId);
-    if (!state) state = {};
-    if (!state.counts) {
-      state.counts = {
-        quest: { pura: 0, kama: 0, casual: 0, entries: [] },
-        tosu: { pura: 0, kama: 0, casual: 0, entries: [] },
-        horse: { pura: 0, kama: 0, casual: 0, entries: [] },
-      };
-    }
+    await interaction.deferReply({ ephemeral: true });
+
+    const state = await readState(guildId);
 
     try {
-      // メッセージ送信を並列化
-      const [questMsg, tosuMsg, horseMsg] = await Promise.all([
-        questChannel.send({
-          embeds: [buildPanelEmbed('quest', state.counts.quest)],
-          components: buildPanelButtons('quest'),
-          content: '',
-        }),
-        tosuChannel.send({
-          embeds: [buildPanelEmbed('tosu', state.counts.tosu)],
-          components: buildPanelButtons('tosu'),
-          content: '',
-        }),
-        horseChannel.send({
-          embeds: [buildPanelEmbed('horse', state.counts.horse)],
-          components: buildPanelButtons('horse'),
-          content: '',
-        }),
-      ]);
-
-      // state更新
-      state.panelMessages = {
-        quest: {
-          channelId: questChannel.id,
-          messageId: questMsg.id,
-          threadId: null,
-        },
-        tosu: {
-          channelId: tosuChannel.id,
-          messageId: tosuMsg.id,
-          threadId: null,
-        },
-        horse: {
-          channelId: horseChannel.id,
-          messageId: horseMsg.id,
-          threadId: null,
-        },
+      const channels = {
+        quest: questChannel,
+        tosu: tosuChannel,
+        horse: horseChannel,
       };
+
+      for (const type of ['quest', 'tosu', 'horse']) {
+        const channel = channels[type];
+
+        // Post Status Panel (with buttons)
+        const statusEmbed = buildPanelEmbed('status', type, state);
+        const buttons = buildPanelButtons(type);
+        const statusMsg = await channel.send({ embeds: [statusEmbed], components: buttons });
+
+        // Post Orders Panel (display only)
+        const ordersEmbed = buildPanelEmbed('orders', type, state);
+        const ordersMsg = await channel.send({ embeds: [ordersEmbed] });
+
+        // Update state with new message info
+        state.panelMessages[type] = {
+          channelId: channel.id,
+          statusMessageId: statusMsg.id,
+          ordersMessageId: ordersMsg.id,
+        };
+      }
 
       await writeState(guildId, state);
 

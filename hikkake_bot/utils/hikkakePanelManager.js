@@ -1,126 +1,41 @@
-// utils/hikkakePanelManager.js
+// hikkake_bot/utils/hikkakePanelManager.js
 
-const {
-  EmbedBuilder,
-  ActionRowBuilder,
-  ButtonBuilder,
-  ButtonStyle,
-} = require('discord.js');
+const { buildPanelEmbed, buildPanelButtons } = require('./panelBuilder');
 
 /**
- * すべてのhikkakeパネルを更新
+ * すべてのhikkake_botパネル（店内状況と受注一覧）を更新します。
  * @param {import('discord.js').Client} client
- * @param {string} guildId 
- * @param {object} state 
+ * @param {string} guildId
+ * @param {object} state stateManagerから取得した現在の状態オブジェクト
  */
 async function updateAllHikkakePanels(client, guildId, state) {
-  try {
-    const guild = await client.guilds.fetch(guildId).catch(() => null);
-    if (!guild) {
-      console.warn(`[updateAllHikkakePanels] ギルド取得失敗: ${guildId}`);
-      return;
+  for (const type of ['quest', 'tosu', 'horse']) {
+    const panelInfo = state.panelMessages?.[type];
+    if (!panelInfo || !panelInfo.channelId || !panelInfo.statusMessageId || !panelInfo.ordersMessageId) {
+      continue;
     }
 
-    /** @type {Array<'quest' | 'tosu' | 'horse'>} */
-    const panelTypes = ['quest', 'tosu', 'horse'];
+    try {
+      const channel = await client.channels.fetch(panelInfo.channelId);
+      if (!channel || !channel.isTextBased()) continue;
 
-    for (const type of panelTypes) {
-      const panelInfo = state.panelMessages?.[type];
-      if (!panelInfo) {
-        console.warn(`[updateAllHikkakePanels] ${type}のpanelMessagesが見つかりません`);
-        continue;
-      }
+      // 店内状況パネルを更新
+      const statusMsg = await channel.messages.fetch(panelInfo.statusMessageId);
+      const statusEmbed = buildPanelEmbed('status', type, state);
+      const buttons = buildPanelButtons(type);
+      await statusMsg.edit({ embeds: [statusEmbed], components: buttons });
 
-      const channel = await guild.channels.fetch(panelInfo.channelId).catch(() => null);
-      if (!channel || !channel.isTextBased()) {
-        console.warn(`[updateAllHikkakePanels] 無効なチャンネル: ${panelInfo.channelId}`);
-        continue;
-      }
+      // 受注一覧パネルを更新
+      const ordersMsg = await channel.messages.fetch(panelInfo.ordersMessageId);
+      const ordersEmbed = buildPanelEmbed('orders', type, state);
+      await ordersMsg.edit({ embeds: [ordersEmbed], components: [] }); // 受注一覧にはボタン不要
 
-      const message = await channel.messages.fetch(panelInfo.messageId).catch(() => null);
-      if (!message) {
-        console.warn(`[updateAllHikkakePanels] メッセージ取得失敗: ${panelInfo.messageId}`);
-        continue;
-      }
-
-      // countsはプラ・カマ・ふらっと人数
-      const counts = state.counts?.[type] || { pura: 0, kama: 0, casual: 0 };
-      // 受注人数はstate.ordersなど別管理なら取得
-      const orderCount = state.orders?.[type] ?? 0;
-
-      // Embedに渡す人数データをまとめる
-      const embed = buildPanelEmbed(type, {
-        plakama: (counts.pura ?? 0) + (counts.kama ?? 0),
-        flat: counts.casual ?? 0,
-        order: orderCount,
-      });
-
-      const components = buildPanelButtons(type);
-
-      // 修正: content: '' を明示
-      await message.edit({ embeds: [embed], components, content: '' });
+    } catch (error) {
+      console.error(`[hikkakePanelManager] パネル更新失敗: type "${type}" in guild ${guildId}`, error);
     }
-  } catch (err) {
-    console.error('[updateAllHikkakePanels] 想定外のエラー:', err);
   }
-}
-
-/**
- * パネル用のEmbedを生成
- * @param {'quest' | 'tosu' | 'horse'} type 
- * @param {object} data
- * @param {number} data.plakama プラ＋カマ人数合計
- * @param {number} data.flat ふらっと来ちゃった人数
- * @param {number} data.order 受注人数
- * @returns {EmbedBuilder}
- */
-function buildPanelEmbed(type, data) {
-  const titleMap = {
-    quest: '🎯 クエスト一覧',
-    tosu: '💥 凸スナ一覧',
-    horse: '🐴 トロイの木馬一覧',
-  };
-
-  return new EmbedBuilder()
-    .setTitle(titleMap[type] || '一覧')
-    .setDescription(
-      `📦 **受注人数:** ${data.order}人\n` +
-      `👥 **プラカマ人数:** ${data.plakama}人\n` +
-      `🚶‍♂️ **ふらっと来ちゃった:** ${data.flat}人`
-    )
-    .setColor(0x0099ff)
-    .setFooter({ text: `最終更新: ${new Date().toLocaleString('ja-JP')}` });
-}
-
-/**
- * パネル用ボタンを生成
- * @param {'quest' | 'tosu' | 'horse'} type 
- * @returns {ActionRowBuilder[]}
- */
-function buildPanelButtons(type) {
-  const row = new ActionRowBuilder().addComponents(
-    new ButtonBuilder()
-      .setCustomId(`hikkake_${type}_plakama`)
-      .setLabel('プラカマ')
-      .setStyle(ButtonStyle.Primary),
-
-    new ButtonBuilder()
-      .setCustomId(`hikkake_${type}_order`)
-      .setLabel('受注')
-      .setStyle(ButtonStyle.Success),
-
-    new ButtonBuilder()
-      .setCustomId(`hikkake_${type}_flat`)
-      .setLabel('ふらっと来ちゃった')
-      .setStyle(ButtonStyle.Secondary)
-  );
-
-  // 返り値は1次元配列で返す（呼び出し側で二重配列にしないこと！）
-  return [row];
 }
 
 module.exports = {
   updateAllHikkakePanels,
-  buildPanelEmbed,
-  buildPanelButtons,
 };

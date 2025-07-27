@@ -1,127 +1,53 @@
 // hikkake_bot/utils/hikkake_button_handler.js
-const { StringSelectMenuBuilder, ActionRowBuilder, MessageFlagsBitField } = require('discord.js');
+const { ModalBuilder, TextInputBuilder, TextInputStyle, ActionRowBuilder } = require('discord.js');
+const { readState } = require('./hikkakeStateManager');
 
 module.exports = {
   /**
-   * ボタン押下ハンドラ
    * @param {import('discord.js').ButtonInteraction} interaction
-   * @returns {Promise<boolean>} 処理したらtrue、未処理ならfalse
    */
   async execute(interaction) {
     if (!interaction.isButton()) return false;
 
-    const customId = interaction.customId;
+    const match = interaction.customId.match(/^hikkake_(quest|tosu|horse)_(plakama|order|casual)$/);
+    if (!match) return false;
+
+    const [, type, action] = match;
+    const state = await readState(interaction.guildId);
 
     try {
-      // プラカマボタン
-      let match = customId.match(/^hikkake_(quest|tosu|horse)_plakama$/);
-      if (match) {
-        const type = match[1];
-        const puraOptions = Array.from({ length: 25 }, (_, i) => ({
-          label: `プラ ${i + 1}人`,
-          value: `pura_${i + 1}`,
-        }));
-        const kamaOptions = Array.from({ length: 25 }, (_, i) => ({
-          label: `カマ ${i + 1}人`,
-          value: `kama_${i + 1}`,
-        }));
-
-        const puraSelect = new StringSelectMenuBuilder()
-          .setCustomId(`hikkake_${type}_plakama_pura_select`)
-          .setPlaceholder('プラ人数を選択してください（1〜25）')
-          .addOptions(puraOptions);
-
-        const kamaSelect = new StringSelectMenuBuilder()
-          .setCustomId(`hikkake_${type}_plakama_kama_select`)
-          .setPlaceholder('カマ人数を選択してください（1〜25）')
-          .addOptions(kamaOptions);
-
-        const row1 = new ActionRowBuilder().addComponents(puraSelect);
-        const row2 = new ActionRowBuilder().addComponents(kamaSelect);
-
-        await interaction.reply({
-          content: `【${type.toUpperCase()}】プラ・カマ人数を選んでください。`,
-          components: [row1, row2],
-          flags: MessageFlagsBitField.Flags.Ephemeral,
-        });
+      if (action === 'plakama') {
+        const staff = state.staff?.[type] || { pura: 0, kama: 0 };
+        const modal = new ModalBuilder().setCustomId(`hikkake_plakama_modal_${type}`).setTitle(`【${type.toUpperCase()}】基本スタッフ設定`);
+        const puraInput = new TextInputBuilder().setCustomId('pura_count').setLabel('プラの基本人数').setStyle(TextInputStyle.Short).setValue(String(staff.pura));
+        const kamaInput = new TextInputBuilder().setCustomId('kama_count').setLabel('カマの基本人数').setStyle(TextInputStyle.Short).setValue(String(staff.kama));
+        modal.addComponents(new ActionRowBuilder().addComponents(puraInput), new ActionRowBuilder().addComponents(kamaInput));
+        await interaction.showModal(modal);
         return true;
       }
 
-      // 受注ボタン
-      match = customId.match(/^hikkake_(quest|tosu|horse)_order$/);
-      if (match) {
-        const type = match[1];
-        const puraOptions = Array.from({ length: 25 }, (_, i) => ({
-          label: `プラ ${i + 1}人`,
-          value: `pura_${i + 1}`,
-        }));
-        const kamaOptions = Array.from({ length: 25 }, (_, i) => ({
-          label: `カマ ${i + 1}人`,
-          value: `kama_${i + 1}`,
-        }));
-        const bottleOptions = Array.from({ length: 25 }, (_, i) => ({
-          label: `本数 ${i + 1}`,
-          value: `bottle_${i + 1}`,
-        }));
-
-        const puraSelect = new StringSelectMenuBuilder()
-          .setCustomId(`hikkake_${type}_order_pura_select`)
-          .setPlaceholder('プラ人数を選択してください（1〜25）')
-          .addOptions(puraOptions);
-
-        const kamaSelect = new StringSelectMenuBuilder()
-          .setCustomId(`hikkake_${type}_order_kama_select`)
-          .setPlaceholder('カマ人数を選択してください（1〜25）')
-          .addOptions(kamaOptions);
-
-        const bottleSelect = new StringSelectMenuBuilder()
-          .setCustomId(`hikkake_${type}_order_bottle_select`)
-          .setPlaceholder('本数(ボトル)を選択してください（1〜25）')
-          .addOptions(bottleOptions);
-
-        const row1 = new ActionRowBuilder().addComponents(puraSelect);
-        const row2 = new ActionRowBuilder().addComponents(kamaSelect);
-        const row3 = new ActionRowBuilder().addComponents(bottleSelect);
-
-        await interaction.reply({
-          content: `【${type.toUpperCase()}】プラ・カマ人数と本数(ボトル)を選んでください。`,
-          components: [row1, row2, row3],
-          flags: MessageFlagsBitField.Flags.Ephemeral,
-        });
+      if (action === 'order') {
+        const modal = new ModalBuilder().setCustomId(`hikkake_order_modal_${type}`).setTitle(`【${type.toUpperCase()}】受注内容入力`);
+        const peopleInput = new TextInputBuilder().setCustomId('people_count').setLabel('受注した人数').setStyle(TextInputStyle.Short).setPlaceholder('例: 2').setRequired(true);
+        const bottlesInput = new TextInputBuilder().setCustomId('bottles_count').setLabel('ボトルの本数').setStyle(TextInputStyle.Short).setPlaceholder('例: 1').setRequired(true);
+        const castPuraInput = new TextInputBuilder().setCustomId('cast_pura_count').setLabel('担当したプラの人数').setStyle(TextInputStyle.Short).setPlaceholder('例: 1').setRequired(true);
+        const castKamaInput = new TextInputBuilder().setCustomId('cast_kama_count').setLabel('担当したカマの人数').setStyle(TextInputStyle.Short).setPlaceholder('例: 0').setRequired(true);
+        modal.addComponents(
+          new ActionRowBuilder().addComponents(peopleInput),
+          new ActionRowBuilder().addComponents(bottlesInput),
+          new ActionRowBuilder().addComponents(castPuraInput),
+          new ActionRowBuilder().addComponents(castKamaInput)
+        );
+        await interaction.showModal(modal);
         return true;
       }
 
-      // ふらっと来たボタン
-      match = customId.match(/^hikkake_(quest|tosu|horse)_casual$/);
-      if (match) {
-        const type = match[1];
-        const puraOptions = Array.from({ length: 25 }, (_, i) => ({
-          label: `プラ ${i + 1}人`,
-          value: `pura_${i + 1}`,
-        }));
-        const kamaOptions = Array.from({ length: 25 }, (_, i) => ({
-          label: `カマ ${i + 1}人`,
-          value: `kama_${i + 1}`,
-        }));
-
-        const puraSelect = new StringSelectMenuBuilder()
-          .setCustomId(`hikkake_${type}_casual_pura_select`)
-          .setPlaceholder('プラ人数を選択してください（1〜25）')
-          .addOptions(puraOptions);
-
-        const kamaSelect = new StringSelectMenuBuilder()
-          .setCustomId(`hikkake_${type}_casual_kama_select`)
-          .setPlaceholder('カマ人数を選択してください（1〜25）')
-          .addOptions(kamaOptions);
-
-        const row1 = new ActionRowBuilder().addComponents(puraSelect);
-        const row2 = new ActionRowBuilder().addComponents(kamaSelect);
-
-        await interaction.reply({
-          content: `【${type.toUpperCase()}】ふらっと来た プラ・カマ人数を選んでください。`,
-          components: [row1, row2],
-          flags: MessageFlagsBitField.Flags.Ephemeral,
-        });
+      if (action === 'casual') {
+        const modal = new ModalBuilder().setCustomId(`hikkake_casual_modal_${type}`).setTitle(`【${type.toUpperCase()}】ふらっと来たスタッフ追加`);
+        const puraInput = new TextInputBuilder().setCustomId('pura_add_count').setLabel('追加するプラの人数').setStyle(TextInputStyle.Short).setPlaceholder('例: 1').setRequired(true);
+        const kamaInput = new TextInputBuilder().setCustomId('kama_add_count').setLabel('追加するカマの人数').setStyle(TextInputStyle.Short).setPlaceholder('例: 0').setRequired(true);
+        modal.addComponents(new ActionRowBuilder().addComponents(puraInput), new ActionRowBuilder().addComponents(kamaInput));
+        await interaction.showModal(modal);
         return true;
       }
 
@@ -130,10 +56,7 @@ module.exports = {
       console.error('[hikkake_button_handler] ボタン処理エラー:', error);
       if (!interaction.replied && !interaction.deferred) {
         try {
-          await interaction.reply({
-            content: 'ボタン処理中にエラーが発生しました。',
-            flags: MessageFlagsBitField.Flags.Ephemeral,
-          });
+          await interaction.reply({ content: 'ボタン処理中にエラーが発生しました。', ephemeral: true });
         } catch (e) {
           console.error('[hikkake_button_handler] エラー返信失敗:', e);
         }
