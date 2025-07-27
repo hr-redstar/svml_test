@@ -20,18 +20,32 @@ module.exports = {
       const state = await readState(guildId);
 
       if (!state[type]) state[type] = {};
-      if (!state[type][channelId]) state[type][channelId] = { pura: 0, kama: 0, orders: [], messageId: null };
+      if (!state[type][channelId]) {
+        state[type][channelId] = { pura: 0, kama: 0, orders: [], messageId: null };
+      }
+      if (typeof state[type][channelId].pura !== 'number') {
+        state[type][channelId].pura = 0;
+      }
 
-      // 上書きにしたい場合は以下を使う（追加ではなく）
-      // state[type][channelId].pura = selected;
-      // 追加なら以下のまま
+      // 追加する場合
       state[type][channelId].pura += selected;
+
+      // // 上書きにしたい場合は以下を使う
+      // state[type][channelId].pura = selected;
 
       await writeState(guildId, state);
 
-      // パネル更新
-      const updatedEmbed = buildPanelEmbed(type, state[type][channelId]);
-      const components = [buildPanelButtons(type)];
+      // パネル用Embedはplakama合計やcasualも必要ならここで計算して渡すのが理想ですが
+      // ひとまず個別値だけでEmbed作る場合、buildPanelEmbedの引数に合わせて整形してください
+      // 例:
+      const embedData = {
+        plakama: state[type][channelId].pura + (state[type][channelId].kama || 0),
+        flat: 0,
+        order: 0,
+      };
+      const updatedEmbed = buildPanelEmbed(type, embedData);
+
+      const components = buildPanelButtons(type);
 
       try {
         const messageId = state[type][channelId].messageId;

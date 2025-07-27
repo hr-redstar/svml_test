@@ -13,7 +13,6 @@ function getFilePath(guildId) {
 }
 
 function getDefaultState() {
-  const defaultCount = { pura: 0, kama: 0, casual: 0, entries: [] };
   return {
     panelMessages: {
       quest: null,
@@ -21,9 +20,9 @@ function getDefaultState() {
       horse: null,
     },
     counts: {
-      quest: { ...defaultCount },
-      tosu: { ...defaultCount },
-      horse: { ...defaultCount },
+      quest: { pura: 0, kama: 0, casual: 0, entries: [] },
+      tosu: { pura: 0, kama: 0, casual: 0, entries: [] },
+      horse: { pura: 0, kama: 0, casual: 0, entries: [] },
     },
     logChannels: {
       quest: null,
@@ -51,16 +50,20 @@ function ensureStateStructure(state) {
     if (!state.logChannels[type]) state.logChannels[type] = null;
     if (!state.logs[type]) state.logs[type] = {};
 
+    // counts の構造を getDefaultState と合わせる
     if (!state.counts[type]) {
       state.counts[type] = { pura: 0, kama: 0, casual: 0, entries: [] };
     }
 
-    // 安全チェックと初期化
+    // 安全チェックと初期化を新しい構造に合わせる
     const ct = state.counts[type];
     if (typeof ct.pura !== 'number') ct.pura = 0;
     if (typeof ct.kama !== 'number') ct.kama = 0;
     if (typeof ct.casual !== 'number') ct.casual = 0;
     if (!Array.isArray(ct.entries)) ct.entries = [];
+
+    // 古いプロパティを削除してデータをクリーンに保つ
+    delete ct.bottles;
   }
 
   return state;
@@ -73,7 +76,12 @@ async function readState(guildId) {
     const rawState = JSON.parse(contents.toString());
     return ensureStateStructure(rawState);
   } catch (e) {
-    console.warn(`[GCS] 初期state作成: ${getFilePath(guildId)}`);
+    // ファイルが存在しないエラー(404)は初回起動時の正常な動作なので、それ以外を警告として扱う
+    if (e.code !== 404) {
+      console.warn(`[GCS] state読み込み失敗: ${getFilePath(guildId)} - ${e.message}`);
+    } else {
+      console.log(`[GCS] 初期state作成: ${getFilePath(guildId)}`);
+    }
     return getDefaultState();
   }
 }

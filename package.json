@@ -1,6 +1,9 @@
 {
-  "name": "uriage-discord-bot",
+  "name": "svml-zimu-bot",
   "version": "0.1.0",
+  "description": "SVML事務bot.",
+  "author": "RedStar HR <redstar.hoshir@gmail.com>",
+  "license": "MIT",
   "main": "index.js",
   "scripts": {
     "start": "node index.js",
@@ -14,5 +17,5 @@
 },
   "devDependencies": {
     "pm2": "^5.2.0"
-  }
+  },
 }

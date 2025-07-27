@@ -43,9 +43,12 @@ async function updateAllHikkakePanels(client, guildId, state) {
         continue;
       }
 
+      // countsはプラ・カマ・ふらっと人数
       const counts = state.counts?.[type] || { pura: 0, kama: 0, casual: 0 };
+      // 受注人数はstate.ordersなど別管理なら取得
       const orderCount = state.orders?.[type] ?? 0;
 
+      // Embedに渡す人数データをまとめる
       const embed = buildPanelEmbed(type, {
         plakama: (counts.pura ?? 0) + (counts.kama ?? 0),
         flat: counts.casual ?? 0,
