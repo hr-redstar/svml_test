@@ -1,36 +1,6 @@
 // hikkake_bot/utils/hikkake_button_handler.js
-const { StringSelectMenuBuilder, ActionRowBuilder, StringSelectMenuOptionBuilder } = require('discord.js');
-
-/**
- * セレクトメニューを含むActionRowを生成する
- * @param {string} customId
- * @param {string} placeholder
- * @param {import('discord.js').StringSelectMenuOptionBuilder[]} options
- * @returns {ActionRowBuilder<StringSelectMenuBuilder>}
- */
-function createSelectMenuRow(customId, placeholder, options) {
-  const selectMenu = new StringSelectMenuBuilder()
-    .setCustomId(customId)
-    .setPlaceholder(placeholder)
-    .addOptions(options);
-  return new ActionRowBuilder().addComponents(selectMenu);
-}
-
-/**
- * 数値の選択肢を生成する
- * @param {number} count
- * @param {string} unit
- * @param {number} start
- * @returns {StringSelectMenuOptionBuilder[]}
- */
-function createNumericOptions(count, unit, start = 1) {
-    return Array.from({ length: count }, (_, i) => {
-        const value = i + start;
-        return new StringSelectMenuOptionBuilder()
-            .setLabel(`${value}${unit}`)
-            .setValue(String(value));
-    });
-}
+const { ModalBuilder, TextInputBuilder, TextInputStyle, ActionRowBuilder } = require('discord.js');
+const { createSelectMenuRow, createNumericOptions } = require('./discordUtils');
 
 module.exports = {
   /**
@@ -38,6 +8,34 @@ module.exports = {
    */
   async execute(interaction) {
     if (!interaction.isButton()) return false;
+
+    // --- New handler for settings button ---
+    if (interaction.customId === 'hikkake_open_settings_modal') {
+      try {
+        // This modal is for text input, which aligns with your design preference.
+        const modal = new ModalBuilder()
+          .setCustomId('hikkake_settings_submit')
+          .setTitle('ひっかけボット 反応文設定');
+
+        const responseTextInput = new TextInputBuilder()
+          .setCustomId('response_text_input')
+          .setLabel('新しい反応文を入力')
+          .setStyle(TextInputStyle.Paragraph)
+          .setPlaceholder('例: {user}さんが{count}人受注しました！')
+          .setRequired(true);
+
+        const actionRow = new ActionRowBuilder().addComponents(responseTextInput);
+        modal.addComponents(actionRow);
+
+        await interaction.showModal(modal);
+        return true;
+      } catch (error) {
+        console.error('[hikkake_button_handler] 設定モーダル表示エラー:', error);
+        // The global error handler in index.js will handle the reply.
+        throw error;
+      }
+    }
+    // --- End of new handler ---
 
     const match = interaction.customId.match(/^hikkake_(quest|tosu|horse)_(plakama|order|casual)$/);
     if (!match) return false;
@@ -53,8 +51,8 @@ module.exports = {
         row = createSelectMenuRow(`hikkake_plakama_step1_${type}`, 'プラの人数を選択 (1-25)', createNumericOptions(25, '人'));
       } else if (action === 'order') {
         content = `【${type.toUpperCase()}】受注: まず担当したプラの人数を選択してください。`;
-        // 受注では0人も選択可能にする
-        row = createSelectMenuRow(`hikkake_order_step1_${type}`, '担当プラの人数を選択 (0-25)', createNumericOptions(26, '人', 0));
+        // BUG FIX: The number of options cannot exceed 25. Range 0-24 gives 25 options.
+        row = createSelectMenuRow(`hikkake_order_step1_${type}`, '担当プラの人数を選択 (0-24)', createNumericOptions(25, '人', 0));
       } else if (action === 'casual') {
         content = `【${type.toUpperCase()}】ふらっと来た: まず追加するプラの人数を選択してください。`;
         row = createSelectMenuRow(`hikkake_casual_step1_${type}`, '追加プラの人数を選択 (1-25)', createNumericOptions(25, '人'));

@@ -3,13 +3,8 @@
 require('dotenv').config();
 const fs = require('fs');
 const path = require('path');
-const {
-  Client,
-  GatewayIntentBits,
-  Collection,
-  Events,
-  InteractionResponseFlags,
-} = require('discord.js');
+const { Collection, Events } = require('discord.js');
+const { client } = require('./client');
 
 // --- 必須環境変数チェック ---
 const requiredEnv = ['DISCORD_TOKEN', 'CLIENT_ID', 'GUILD_ID'];
@@ -21,10 +16,6 @@ for (const envVar of requiredEnv) {
 }
 
 console.log('Google Credentials Path:', process.env.GOOGLE_APPLICATION_CREDENTIALS);
-
-const client = new Client({
-  intents: [GatewayIntentBits.Guilds],
-});
 
 client.commands = new Collection();
 
@@ -75,6 +66,7 @@ console.log(`✅ ${client.commands.size} 個のコマンドを読み込みまし
 const modalHandler = require(path.join(__dirname, 'uriage_bot', 'utils', 'uriage_modals.js'));
 const buttonHandler = require(path.join(__dirname, 'uriage_bot', 'utils', 'uriage_buttons.js'));
 
+const hikkakeModalHandler = require(path.join(__dirname, 'hikkake_bot', 'utils', 'hikkake_modal_handler.js'));
 const hikkakeButtonHandler = require(path.join(__dirname, 'hikkake_bot', 'utils', 'hikkake_button_handler.js'));
 const hikkakeSelectHandler = require(path.join(__dirname, 'hikkake_bot', 'utils', 'hikkake_select_handler.js'));
 
@@ -103,6 +95,7 @@ client.on(Events.InteractionCreate, async (interaction) => {
     // モーダル送信の汎用ハンドラ優先処理
     if (interaction.isModalSubmit()) {
       if (await modalHandler.execute(interaction)) return;
+      if (await hikkakeModalHandler.execute(interaction)) return;
     }
 
     // セレクトメニュー処理（hikkake系のものが多いため専用ハンドラも使用）
@@ -113,15 +106,23 @@ client.on(Events.InteractionCreate, async (interaction) => {
   } catch (error) {
     console.error('❌ インタラクション処理エラー:', error);
 
+    // If the interaction is unknown (error code 10062), we can't reply to it.
+    // Log the issue and return to prevent a crash.
+    if (error.code === 10062) {
+      console.error('インタラクションの有効期限が切れているため、エラーメッセージを返信できませんでした。');
+      return;
+    }
+
     const errorMessage = {
       content: 'コマンド実行中にエラーが発生しました。',
       ephemeral: true,
     };
 
     if (interaction.replied || interaction.deferred) {
-      await interaction.followUp(errorMessage);
+      // Use catch to prevent unhandled promise rejections if the followup also fails
+      await interaction.followUp(errorMessage).catch(e => console.error('エラーのフォローアップに失敗:', e));
     } else {
-      await interaction.reply(errorMessage);
+      await interaction.reply(errorMessage).catch(e => console.error('エラーの返信に失敗:', e));
     }
   }
 });

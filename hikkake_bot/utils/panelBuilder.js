@@ -1,6 +1,7 @@
 // utils/panelBuilder.js
 
 const { EmbedBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle } = require('discord.js');
+const { DateTime } = require('luxon');
 
 /**
  * Builds one of the two panel embeds.
@@ -9,29 +10,71 @@ const { EmbedBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle } = require('
  * @param {object} state - The current state object.
  * @returns {EmbedBuilder}
  */
-function buildPanelEmbed(panelType, hikkakeType, state) {
-  const staff = state.staff?.[hikkakeType] || { pura: 0, kama: 0 };
-  const orders = state.orders?.[hikkakeType] || [];
+function buildPanelEmbed(panelType, hikkakeType, state, guildId) {
 
   if (panelType === 'status') {
-    // Calculate available staff by subtracting staff allocated to orders
-    const allocatedPura = orders.reduce((sum, order) => sum + (order.castPura || 0), 0);
-    const allocatedKama = orders.reduce((sum, order) => sum + (order.castKama || 0), 0);
+    let orderedTypes;
 
-    const availablePura = (staff.pura || 0) - allocatedPura;
-    const availableKama = (staff.kama || 0) - allocatedKama;
+    // パネルのプライマリカテゴリに基づいて表示順を設定
+    switch (hikkakeType) {
+      case 'quest':
+        orderedTypes = ['quest', 'tosu', 'horse'];
+        break;
+      case 'tosu':
+        orderedTypes = ['tosu', 'quest', 'horse'];
+        break;
+      case 'horse':
+        orderedTypes = ['horse', 'tosu', 'quest'];
+        break;
+      default:
+        orderedTypes = ['quest', 'tosu', 'horse'];
+        break;
+    }
+
+    const titleMap = {
+      quest: '【📜｜クエスト依頼】',
+      tosu: '【🔭｜凸スナ】',
+      horse: '【🐴｜トロイの木馬-旧店況】',
+    };
+
+    const linkTextMap = {
+      quest: '【📜｜クエスト依頼】へ',
+      tosu: '【🔭｜凸スナ】へ',
+      horse: '【🐴｜トロイの木馬-旧店況】へ',
+    };
+
+    const fields = orderedTypes.map(type => {
+      const staff = state.staff?.[type] || { pura: 0, kama: 0 };
+      const orders = state.orders?.[type] || [];
+      const allocatedPura = orders.reduce((sum, order) => sum + (order.castPura || 0), 0);
+      const allocatedKama = orders.reduce((sum, order) => sum + (order.castKama || 0), 0);
+      const availablePura = (staff.pura || 0) - allocatedPura;
+      const availableKama = (staff.kama || 0) - allocatedKama;
+
+      const panelInfo = state.panelMessages?.[type];
+      // 各カテゴリの「受注一覧」パネルへのメッセージリンクを生成
+      const messageLink = panelInfo && panelInfo.channelId && panelInfo.ordersMessageId && guildId
+        ? `https://discord.com/channels/${guildId}/${panelInfo.channelId}/${panelInfo.ordersMessageId}`
+        : '#'; // リンクが作れない場合のフォールバック
+
+      // Define linkText using the map and the generated link
+      const linkText = `[${linkTextMap[type]}](${messageLink})`;
+
+      return {
+        name: `${titleMap[type]}`,
+        value: `${linkText}\nプラ: ${availablePura}人\nカマ: ${availableKama}人`,
+      };
+    });
 
     return new EmbedBuilder()
-      .setTitle(`■ 店内状況 (${hikkakeType.toUpperCase()})`)
-      .addFields(
-        { name: 'プラ', value: `${availablePura}人 (基本: ${staff.pura})`, inline: true },
-        { name: 'カマ', value: `${availableKama}人 (基本: ${staff.kama})`, inline: true }
-      )
+      .setTitle('■ 店内状況')
+      .setFields(fields)
       .setColor(0x0099ff)
       .setTimestamp();
   }
 
   if (panelType === 'orders') {
+    const orders = state.orders?.[hikkakeType] || [];
     const embed = new EmbedBuilder()
       .setTitle(`■ 受注一覧 (${hikkakeType.toUpperCase()})`)
       .setColor(0x00cc99)
@@ -45,7 +88,16 @@ function buildPanelEmbed(panelType, hikkakeType, state) {
         const castPura = order.castPura || 0;
         const castKama = order.castKama || 0;
         const totalCast = castPura + castKama;
-        return `**${typeLabel}** | 人数: ${order.people}人 | 本数: ${order.bottles}本 | キャスト: -${totalCast}人 (プ:${castPura}/カ:${castKama})`;
+        const timestamp = DateTime.fromISO(order.timestamp).setZone('Asia/Tokyo').toFormat('HH:mm');
+        const userMention = order.user?.id ? `<@${order.user.id}>` : '不明';
+
+        const parts = [
+          `【${typeLabel}】キャスト: -${totalCast}人`,
+          `人数: ${order.people}人`,
+          `本数: ${order.bottles}本`,
+        ];
+        const meta = `${timestamp} ${userMention}`;
+        return `${parts.join('　')}　　${meta}`;
       }).join('\n');
       embed.setDescription(description);
     }

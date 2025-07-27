@@ -1,20 +1,8 @@
 // hikkake_bot/utils/hikkakeCasualSelect.js
-const { StringSelectMenuBuilder, ActionRowBuilder, StringSelectMenuOptionBuilder } = require('discord.js');
 const { readState, writeState } = require('./hikkakeStateManager');
 const { updateAllHikkakePanels } = require('./hikkakePanelManager');
 const { logToThread } = require('./threadLogger');
-
-function createSelectMenuRow(customId, placeholder, options) {
-  const selectMenu = new StringSelectMenuBuilder().setCustomId(customId).setPlaceholder(placeholder).addOptions(options);
-  return new ActionRowBuilder().addComponents(selectMenu);
-}
-
-function createNumericOptions(count, unit, start = 1) {
-    return Array.from({ length: count }, (_, i) => {
-        const value = i + start;
-        return new StringSelectMenuOptionBuilder().setLabel(`${value}${unit}`).setValue(String(value));
-    });
-}
+const { createSelectMenuRow, createNumericOptions } = require('./discordUtils');
 
 module.exports = {
   customId: /^hikkake_casual_step(1|2)_(quest|tosu|horse)/,
@@ -34,6 +22,9 @@ module.exports = {
       });
     } else if (step === 2) {
       // Step 2: カマの人数を受け取り、最終処理
+      // Immediately acknowledge the interaction to prevent timeout
+      await interaction.deferUpdate();
+
       const puraAddCount = parseInt(interaction.customId.split('_')[4], 10);
       const kamaAddCount = parseInt(interaction.values[0], 10);
 
@@ -61,7 +52,7 @@ module.exports = {
         console.warn('[hikkakeCasualSelect] ログ出力失敗', e);
       }
 
-      await interaction.update({
+      await interaction.editReply({
         content: `✅ 【${type.toUpperCase()}】に「ふらっと来た」スタッフ (プラ: ${puraAddCount}人, カマ: ${kamaAddCount}人) を追加しました。`,
         components: [],
       });

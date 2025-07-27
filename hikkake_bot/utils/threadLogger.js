@@ -18,10 +18,12 @@ function formatLogMessage(now, logData) {
   switch (logType) {
     case 'プラカマ設定':
       return `${base} **基本スタッフ** を更新 (プラ: ${details.pura ?? '-'}人, カマ: ${details.kama ?? '-'}人)`;
-    case '受注':
-      return `${base} **受注** を登録 (人数: ${details.people}, 本数: ${details.bottles}, キャスト: プ${details.castPura}/カ${details.castKama})`;
+    case '受注': {
+      const totalCast = (details.castPura || 0) + (details.castKama || 0);
+      return `${base} **受注** を登録 (人数: ${details.people}人, 本数: ${details.bottles}本, キャスト消費: -${totalCast}人 [プ${details.castPura}/カ${details.castKama}])`;
+    }
     case 'ふらっと来た':
-      return `${base} **ふらっと来た** スタッフを追加 (プラ: ${details.pura ?? '-'}人, カマ: ${details.kama ?? '-'}人)`;
+      return `${base} **ふらっと来た** スタッフを追加 (プラ: +${details.pura ?? '-'}人, カマ: +${details.kama ?? '-'}人)`;
     default:
       return `📝【${time}】${user?.username || user?.tag || '不明ユーザー'} が操作しました。`;
   }
@@ -83,7 +85,8 @@ async function logToThread(guildId, type, client, logData) {
   if (!thread) return;
 
   const message = formatLogMessage(now, logData);
-  await thread.send(message);
+  const sentMessage = await thread.send(message);
+  return sentMessage;
 }
 
 module.exports = { logToThread };

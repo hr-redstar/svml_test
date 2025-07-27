@@ -64,11 +64,11 @@ module.exports = {
 
       await writeState(guildId, state);
 
-      // Use editReply since we deferred
       await interaction.editReply({ content: '✅ ひっかけ一覧パネルを設置しました。' });
     } catch (error) {
       console.error('[ひっかけ一覧設置] エラー:', error);
-      // Re-throw the error to be handled by the global handler in index.js
+      // Let the global handler in index.js send the error message
+      // to prevent "InteractionAlreadyReplied" errors.
       throw error;
     }
   }

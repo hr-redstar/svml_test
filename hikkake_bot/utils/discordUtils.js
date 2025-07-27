@@ -1,6 +1,7 @@
 // utils/discordUtils.js
 
-const { client } = require('../client');
+const { StringSelectMenuBuilder, ActionRowBuilder, StringSelectMenuOptionBuilder } = require('discord.js');
+const { client } = require('../../client');
 
 /**
  * ギルドをキャッシュ優先で取得し、なければAPIからフェッチ
@@ -27,4 +28,30 @@ async function getGuild(guildId) {
   }
 }
 
-module.exports = { getGuild };
+/**
+ * セレクトメニューを含むActionRowを生成する
+ * @param {string} customId
+ * @param {string} placeholder
+ * @param {import('discord.js').StringSelectMenuOptionBuilder[]} options
+ * @returns {ActionRowBuilder<StringSelectMenuBuilder>}
+ */
+function createSelectMenuRow(customId, placeholder, options) {
+  const selectMenu = new StringSelectMenuBuilder().setCustomId(customId).setPlaceholder(placeholder).addOptions(options);
+  return new ActionRowBuilder().addComponents(selectMenu);
+}
+
+/**
+ * 数値の選択肢を生成する
+ * @param {number} count
+ * @param {string} unit
+ * @param {number} start
+ * @returns {StringSelectMenuOptionBuilder[]}
+ */
+function createNumericOptions(count, unit, start = 1) {
+    return Array.from({ length: count }, (_, i) => {
+        const value = i + start;
+        return new StringSelectMenuOptionBuilder().setLabel(`${value}${unit}`).setValue(String(value));
+    });
+}
+
+module.exports = { getGuild, createSelectMenuRow, createNumericOptions };

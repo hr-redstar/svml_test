@@ -1,6 +1,6 @@
 // utils/uriage_modals.js
 
-const { EmbedBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle, InteractionResponseFlags } = require('discord.js');
+const { EmbedBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle } = require('discord.js');
 const { normalizeDate } = require('./date');
 const { saveJsonToGCS, copyGCSFile, readJsonFromGCS, deleteGCSFile } = require('./gcs');
 const path = require('path');
@@ -45,7 +45,7 @@ module.exports = {
 
     if (interaction.customId === 'sales_report_modal') {
       const { data, error } = parseAndValidateReportData(interaction);
-      if (error) { return interaction.reply({ content: error, flags: InteractionResponseFlags.Ephemeral }); }
+      if (error) { return interaction.reply({ content: error, ephemeral: true }); }
       const { normalizedDate, totalNum, cashNum, cardNum, expenseNum, balance } = data;
 
       // Embedメッセージを作成
@@ -150,7 +150,7 @@ module.exports = {
         console.error('❌ 売上報告の保存または返信中にエラー:', error);
         await interaction.reply({
           content: 'エラーが発生し、売上報告を保存できませんでした。',
-          flags: InteractionResponseFlags.Ephemeral,
+          ephemeral: true,
         });
       }
 
@@ -161,7 +161,7 @@ module.exports = {
       const [, originalDate, userId] = interaction.customId.split('_');
 
       const { data, error } = parseAndValidateReportData(interaction);
-      if (error) { return interaction.reply({ content: error, flags: InteractionResponseFlags.Ephemeral }); }
+      if (error) { return interaction.reply({ content: error, ephemeral: true }); }
       const { normalizedDate, totalNum, cashNum, cardNum, expenseNum, balance } = data;
 
       // --- 新しいEmbedを作成 ---
@@ -203,7 +203,7 @@ module.exports = {
         // messageIdを取得するために元のデータを読み込む
         const originalData = await readJsonFromGCS(originalFilePath);
         if (!originalData || !originalData.messageId) {
-          return interaction.reply({ content: '元の報告データが見つからないか、データが破損しているため、修正できませんでした。', flags: [InteractionResponseFlags.Ephemeral] });
+          return interaction.reply({ content: '元の報告データが見つからないか、データが破損しているため、修正できませんでした。', ephemeral: true });
         }
 
         // 日付が変更された場合、古いファイルを削除
@@ -241,11 +241,11 @@ module.exports = {
           components: [newButtons]
         });
 
-        await interaction.reply({ content: '報告を正常に修正しました。', flags: [InteractionResponseFlags.Ephemeral] });
+        await interaction.reply({ content: '報告を正常に修正しました。', ephemeral: true });
 
       } catch (error) {
         console.error('❌ 売上報告の修正中にエラー:', error);
-        return interaction.reply({ content: 'エラーが発生し、報告を修正できませんでした。', flags: [InteractionResponseFlags.Ephemeral] });
+        return interaction.reply({ content: 'エラーが発生し、報告を修正できませんでした。', ephemeral: true });
       }
       return true;
     }

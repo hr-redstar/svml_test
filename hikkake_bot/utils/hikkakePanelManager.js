@@ -21,13 +21,13 @@ async function updateAllHikkakePanels(client, guildId, state) {
 
       // 店内状況パネルを更新
       const statusMsg = await channel.messages.fetch(panelInfo.statusMessageId);
-      const statusEmbed = buildPanelEmbed('status', type, state);
+      const statusEmbed = buildPanelEmbed('status', type, state, guildId);
       const buttons = buildPanelButtons(type);
       await statusMsg.edit({ embeds: [statusEmbed], components: buttons });
 
       // 受注一覧パネルを更新
       const ordersMsg = await channel.messages.fetch(panelInfo.ordersMessageId);
-      const ordersEmbed = buildPanelEmbed('orders', type, state);
+      const ordersEmbed = buildPanelEmbed('orders', type, state, guildId);
       await ordersMsg.edit({ embeds: [ordersEmbed], components: [] }); // 受注一覧にはボタン不要
 
     } catch (error) {

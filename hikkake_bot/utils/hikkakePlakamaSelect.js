@@ -1,20 +1,8 @@
 // hikkake_bot/utils/hikkakePlakamaSelect.js
-const { StringSelectMenuBuilder, ActionRowBuilder, StringSelectMenuOptionBuilder } = require('discord.js');
 const { readState, writeState } = require('./hikkakeStateManager');
 const { updateAllHikkakePanels } = require('./hikkakePanelManager');
 const { logToThread } = require('./threadLogger');
-
-function createSelectMenuRow(customId, placeholder, options) {
-  const selectMenu = new StringSelectMenuBuilder().setCustomId(customId).setPlaceholder(placeholder).addOptions(options);
-  return new ActionRowBuilder().addComponents(selectMenu);
-}
-
-function createNumericOptions(count, unit, start = 1) {
-    return Array.from({ length: count }, (_, i) => {
-        const value = i + start;
-        return new StringSelectMenuOptionBuilder().setLabel(`${value}${unit}`).setValue(String(value));
-    });
-}
+const { createSelectMenuRow, createNumericOptions } = require('./discordUtils');
 
 module.exports = {
   customId: /^hikkake_plakama_step(1|2)_(quest|tosu|horse)/,
@@ -34,6 +22,9 @@ module.exports = {
       });
     } else if (step === 2) {
       // Step 2: Receive "Kama" count and finalize the process.
+      // Immediately acknowledge the interaction to prevent timeout
+      await interaction.deferUpdate();
+
       const puraCount = parseInt(interaction.customId.split('_')[4], 10);
       const kamaCount = parseInt(interaction.values[0], 10);
 
@@ -61,7 +52,7 @@ module.exports = {
         console.warn('[hikkakePlakamaSelect] ログ出力失敗', e);
       }
 
-      await interaction.update({
+      await interaction.editReply({
         content: `✅ 【${type.toUpperCase()}】の基本スタッフを プラ: ${puraCount}人, カマ: ${kamaCount}人 に設定しました。`,
         components: [],
       });
