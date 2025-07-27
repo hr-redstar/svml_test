@@ -5,7 +5,7 @@ const { logToThread } = require('../utils/threadLogger');
 const { InteractionResponseFlags } = require('discord.js');
 
 module.exports = {
-  customId: /^hikkake_(quest|tosu|horse)_plakama_select$/,
+   customId: /^hikkake_plakama_step(1|2)_(quest|tosu|horse)/,
   async handle(interaction) {
     try {
       // customIdからtypeを安全に抽出

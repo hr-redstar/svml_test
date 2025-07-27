@@ -64,10 +64,12 @@ module.exports = {
 
       await writeState(guildId, state);
 
-      await interaction.reply({ content: '✅ ひっかけ一覧パネルを設置しました。', ephemeral: true });
+      // Use editReply since we deferred
+      await interaction.editReply({ content: '✅ ひっかけ一覧パネルを設置しました。' });
     } catch (error) {
       console.error('[ひっかけ一覧設置] エラー:', error);
-      await interaction.reply({ content: '❌ パネル設置に失敗しました。管理者にお問い合わせください。', ephemeral: true });
+      // Re-throw the error to be handled by the global handler in index.js
+      throw error;
     }
   }
 };

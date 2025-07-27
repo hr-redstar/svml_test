@@ -3,8 +3,7 @@
 const {
   StringSelectMenuBuilder,
   ActionRowBuilder,
-  StringSelectMenuOptionBuilder,
-  InteractionResponseFlags,
+  StringSelectMenuOptionBuilder
 } = require('discord.js');
 
 function createOptions(count, labelSuffix = '人', start = 1, labelPrefix = '') {
@@ -52,7 +51,7 @@ module.exports = {
       await interaction.reply({
         content: '📝 受注内容を選んでください。',
         components: rows,
-        flags: InteractionResponseFlags.Ephemeral,
+        ephemeral: true,
       });
 
     } catch (error) {
@@ -60,7 +59,7 @@ module.exports = {
       if (!interaction.replied && !interaction.deferred) {
         await interaction.reply({
           content: '⚠️ エラーが発生しました。もう一度お試しください。',
-          flags: InteractionResponseFlags.Ephemeral,
+          ephemeral: true,
         });
       }
     }
