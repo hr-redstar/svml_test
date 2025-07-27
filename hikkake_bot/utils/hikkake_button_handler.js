@@ -1,5 +1,5 @@
 // hikkake_bot/utils/hikkake_button_handler.js
-const { StringSelectMenuBuilder, ActionRowBuilder, InteractionResponseFlags } = require('discord.js');
+const { StringSelectMenuBuilder, ActionRowBuilder, MessageFlagsBitField } = require('discord.js');
 
 module.exports = {
   /**
@@ -17,12 +17,10 @@ module.exports = {
       let match = customId.match(/^hikkake_(quest|tosu|horse)_plakama$/);
       if (match) {
         const type = match[1];
-        // プラ人数選択
         const puraOptions = Array.from({ length: 25 }, (_, i) => ({
           label: `プラ ${i + 1}人`,
           value: `pura_${i + 1}`,
         }));
-        // カマ人数選択
         const kamaOptions = Array.from({ length: 25 }, (_, i) => ({
           label: `カマ ${i + 1}人`,
           value: `kama_${i + 1}`,
@@ -44,7 +42,7 @@ module.exports = {
         await interaction.reply({
           content: `【${type.toUpperCase()}】プラ・カマ人数を選んでください。`,
           components: [row1, row2],
-          flags: InteractionResponseFlags.Ephemeral,
+          flags: MessageFlagsBitField.Flags.Ephemeral,
         });
         return true;
       }
@@ -53,17 +51,14 @@ module.exports = {
       match = customId.match(/^hikkake_(quest|tosu|horse)_order$/);
       if (match) {
         const type = match[1];
-        // プラ人数
         const puraOptions = Array.from({ length: 25 }, (_, i) => ({
           label: `プラ ${i + 1}人`,
           value: `pura_${i + 1}`,
         }));
-        // カマ人数
         const kamaOptions = Array.from({ length: 25 }, (_, i) => ({
           label: `カマ ${i + 1}人`,
           value: `kama_${i + 1}`,
         }));
-        // 本数(ボトル)
         const bottleOptions = Array.from({ length: 25 }, (_, i) => ({
           label: `本数 ${i + 1}`,
           value: `bottle_${i + 1}`,
@@ -91,7 +86,7 @@ module.exports = {
         await interaction.reply({
           content: `【${type.toUpperCase()}】プラ・カマ人数と本数(ボトル)を選んでください。`,
           components: [row1, row2, row3],
-          flags: InteractionResponseFlags.Ephemeral,
+          flags: MessageFlagsBitField.Flags.Ephemeral,
         });
         return true;
       }
@@ -100,12 +95,10 @@ module.exports = {
       match = customId.match(/^hikkake_(quest|tosu|horse)_casual$/);
       if (match) {
         const type = match[1];
-        // プラ人数
         const puraOptions = Array.from({ length: 25 }, (_, i) => ({
           label: `プラ ${i + 1}人`,
           value: `pura_${i + 1}`,
         }));
-        // カマ人数
         const kamaOptions = Array.from({ length: 25 }, (_, i) => ({
           label: `カマ ${i + 1}人`,
           value: `kama_${i + 1}`,
@@ -127,20 +120,20 @@ module.exports = {
         await interaction.reply({
           content: `【${type.toUpperCase()}】ふらっと来た プラ・カマ人数を選んでください。`,
           components: [row1, row2],
-          flags: InteractionResponseFlags.Ephemeral,
+          flags: MessageFlagsBitField.Flags.Ephemeral,
         });
         return true;
       }
-
-      // クエストでボタン入力時は【クエスト】プラ カマ だけを更新する処理をここで実装
-      // 例: if (type === 'quest') { ...クエスト部分だけ更新... }
 
       return false;
     } catch (error) {
       console.error('[hikkake_button_handler] ボタン処理エラー:', error);
       if (!interaction.replied && !interaction.deferred) {
         try {
-          await interaction.reply({ content: 'ボタン処理中にエラーが発生しました。', flags: InteractionResponseFlags.Ephemeral });
+          await interaction.reply({
+            content: 'ボタン処理中にエラーが発生しました。',
+            flags: MessageFlagsBitField.Flags.Ephemeral,
+          });
         } catch (e) {
           console.error('[hikkake_button_handler] エラー返信失敗:', e);
         }

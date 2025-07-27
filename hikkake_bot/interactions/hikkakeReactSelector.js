@@ -1,53 +1,42 @@
-// interactions/hikkakeReactSelector.js
+// interactions/hikkakePlakamaSelect.js
 
-const { StringSelectMenuBuilder, ActionRowBuilder, InteractionResponseFlags } = require('discord.js');
+const { readState, writeState } = require('../utils/hikkakeStateManager');
+const { updateAllHikkakePanels } = require('../utils/hikkakePanelManager');
 
 module.exports = {
-  customId: /^set_react_(quest|tosu|horse)_(num|count)$/,  // 正規表現で共通化
+  customId: /^hikkake_(quest|tosu|horse)_plakama_(pura|kama)_select$/,
   async handle(interaction) {
     try {
-      // customIdからtype, targetを抽出
-      const [, type, target] = interaction.customId.match(/^set_react_(quest|tosu|horse)_(num|count)$/);
+      const [, type, target] = interaction.customId.match(this.customId);
+      const selectedValue = interaction.values[0];
+      const count = parseInt(selectedValue, 10);
 
-      // 種類の日本語ラベル
-      const typeLabel = {
-        quest: 'クエスト',
-        tosu: '凸スナ',
-        horse: 'トロイの木馬',
-      }[type] ?? '不明';
+      if (isNaN(count)) {
+        return interaction.reply({
+          content: '正しい人数を選択してください。',
+          ephemeral: true,
+        });
+      }
 
-      // 対象の日本語ラベル
-      const targetLabel = {
-        num: '人数',
-        count: '本数',
-      }[target] ?? '不明';
+      const guildId = interaction.guildId;
+      const state = await readState(guildId);
+      state.counts ??= {};
+      state.counts[type] ??= { pura: 0, kama: 0, casual: 0 };
+      state.counts[type][target] = count;
 
-      // セレクトメニュー作成
-      const selectMenu = new StringSelectMenuBuilder()
-        .setCustomId(`react_count_select_${type}_${target}`)
-        .setPlaceholder(`設定する${typeLabel}の${targetLabel}を選んでください`)
-        .setMinValues(1)
-        .setMaxValues(1)
-        .addOptions(
-          Array.from({ length: 25 }, (_, i) => ({
-            label: `${i + 1} ${target === 'num' ? '人' : '本'}`,
-            value: `${i + 1}`,
-          }))
-        );
+      await writeState(guildId, state);
+      await updateAllHikkakePanels(interaction.client, guildId, state);
 
-      const row = new ActionRowBuilder().addComponents(selectMenu);
-
-      // 返信
       await interaction.reply({
-        content: `✅ ${typeLabel} の ${targetLabel}数を選択してください。`,
-        components: [row],
-        flags: InteractionResponseFlags.Ephemeral,
+        content: `【${type.toUpperCase()}】${target === 'pura' ? 'プラ' : 'カマ'}人数を ${count}人 に更新しました。`,
+        ephemeral: true,
       });
     } catch (error) {
-      console.error('[hikkakeReactSelector] エラー:', error);
+      console.error('[hikkakePlakamaSelect] エラー:', error);
       if (!interaction.replied && !interaction.deferred) {
-        await interaction.reply({ content: '選択肢の表示中にエラーが発生しました。', flags: InteractionResponseFlags.Ephemeral });
+        await interaction.reply({ content: '処理中にエラーが発生しました。', ephemeral: true });
       }
     }
   },
 };
+

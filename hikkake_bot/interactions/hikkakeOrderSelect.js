@@ -3,92 +3,94 @@
 const { readState, writeState } = require('../utils/hikkakeStateManager');
 const { buildPanelEmbed, buildPanelButtons } = require('../utils/panelBuilder');
 const { logToThread } = require('../utils/threadLogger');
-const { InteractionResponseFlags } = require('discord.js');
 
 module.exports = {
   customId: /^hikkake_(quest|tosu|horse)_order_select$/,
+
   async handle(interaction) {
+    const match = interaction.customId.match(/^hikkake_(quest|tosu|horse)_order_select$/);
+    if (!match) return;
+
+    const type = match[1];
+    const selected = parseInt(interaction.values[0], 10);
+
+    if (isNaN(selected) || selected < 1) {
+      return interaction.reply({
+        content: '⚠️ 無効な選択です。1人以上を選んでください。',
+        ephemeral: true,
+      });
+    }
+
+    const guildId = interaction.guildId;
+    const channelId = interaction.channelId;
+    const channelName = interaction.channel?.name || '不明チャンネル';
+
     try {
-      const match = interaction.customId.match(/^hikkake_(quest|tosu|horse)_order_select$/);
-      if (!match) return;
-      const type = match[1];
-      const selected = parseInt(interaction.values[0], 10);
-
-      if (isNaN(selected) || selected < 1) {
-        await interaction.reply({ content: '無効な選択です。1人以上を選んでください。', flags: InteractionResponseFlags.Ephemeral });
-        return;
-      }
-
-      const guildId = interaction.guildId;
-      const channelId = interaction.channelId;
-
       const state = await readState(guildId);
+      state.counts ??= {};
+      state.counts[type] ??= { pura: 0, kama: 0, casual: 0 };
+      state[type] ??= {};
+      state[type][channelId] ??= { pura: 0, kama: 0, orders: [], messageId: null };
 
-      if (!state[type]) state[type] = {};
-      if (!state[type][channelId]) {
-        state[type][channelId] = {
-          pura: 0,
-          kama: 0,
-          orders: [],
-          messageId: null,
-        };
-      } else if (!Array.isArray(state[type][channelId].orders)) {
-        state[type][channelId].orders = [];
-      }
+      const globalCount = state.counts[type];
+      const panel = state[type][channelId];
 
-      const total = state[type][channelId];
-      const prevSum = (total.pura ?? 0) + (total.kama ?? 0);
+      // 人数を引く処理
+      const totalBefore = globalCount.pura + globalCount.kama;
+      const deducted = Math.min(selected, totalBefore);
+      const fromPura = Math.min(globalCount.pura, deducted);
+      const fromKama = deducted - fromPura;
 
-      const deducted = Math.min(selected, prevSum);
-      if (deducted > 0) {
-        const fromPura = Math.min(total.pura, deducted);
-        total.pura -= fromPura;
-        total.kama -= deducted - fromPura;
-      }
+      globalCount.pura -= fromPura;
+      globalCount.kama -= fromKama;
 
-      total.orders.push({
+      // ログ記録
+      panel.orders.push({
         user: interaction.user.tag,
-        count: selected,
+        count: deducted,
         timestamp: new Date().toISOString(),
-        channel: interaction.channel.name,
+        channel: channelName,
       });
 
       await writeState(guildId, state);
 
-      // buildPanelButtonsは配列を返すのでそのまま渡す
-      const embed = buildPanelEmbed(type, total);
-      const components = buildPanelButtons(type);
-
-      if (total.messageId) {
+      // メッセージ更新
+      if (panel.messageId) {
         try {
-          const msg = await interaction.channel.messages.fetch(total.messageId);
-          await msg.edit({ embeds: [embed], components, content: '' }); // content: '' を明示
+          const embed = buildPanelEmbed(type, panel, globalCount);
+          const components = buildPanelButtons(type);
+          const msg = await interaction.channel.messages.fetch(panel.messageId);
+          await msg.edit({ embeds: [embed], components, content: '' });
         } catch (e) {
-          console.warn(`[メッセージ更新失敗][${type}]`, e);
+          console.warn(`[${type}] メッセージ更新失敗:`, e);
         }
       } else {
-        console.warn(`[${type}] messageIdが未設定です。`);
+        console.warn(`[${type}] messageId が設定されていません。`);
       }
 
-      try {
-        await logToThread(guildId, type, interaction.client, {
-          user: interaction.user.tag,
-          logType: '受注',
-          details: { requested: selected },
-          channelName: interaction.channel.name,
-        });
-      } catch (e) {
-        console.warn('[スレッドログ出力失敗]', e);
-      }
+      // スレッドログ出力
+      await logToThread(guildId, type, interaction.client, {
+        user: interaction.user.tag,
+        logType: '受注',
+        details: {
+          requested: selected,
+          deductedFrom: { pura: fromPura, kama: fromKama },
+        },
+        channelName,
+      });
 
       await interaction.reply({
-        content: `${selected}人受注を記録しました。`,
-        flags: InteractionResponseFlags.Ephemeral,
+        content: `✅ **${selected}人** の受注を記録しました。\n（内訳：プラ ${fromPura} / カマ ${fromKama}）`,
+        ephemeral: true,
       });
+
     } catch (err) {
       console.error('[hikkakeOrderSelect] エラー:', err);
       if (!interaction.replied && !interaction.deferred) {
-        await interaction.reply({ content: '処理中にエラーが発生しました。', flags: InteractionResponseFlags.Ephemeral });
+        await interaction.reply({
+          content: '⚠️ 処理中にエラーが発生しました。',
+          ephemeral: true,
+        });
       }
     }
   },
