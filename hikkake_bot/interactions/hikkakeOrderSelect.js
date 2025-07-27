@@ -12,8 +12,9 @@ module.exports = {
       if (!match) return;
       const type = match[1];
       const selected = parseInt(interaction.values[0], 10);
-      if (isNaN(selected) || selected < 0) {
-        await interaction.reply({ content: '無効な選択です。', ephemeral: true });
+
+      if (isNaN(selected) || selected < 1) {
+        await interaction.reply({ content: '無効な選択です。1人以上を選んでください。', ephemeral: true });
         return;
       }
 
@@ -22,7 +23,6 @@ module.exports = {
 
       const state = await readState(guildId);
 
-      // 初期化
       if (!state[type]) state[type] = {};
       if (!state[type][channelId]) {
         state[type][channelId] = {
@@ -45,7 +45,6 @@ module.exports = {
         total.kama -= deducted - fromPura;
       }
 
-      // 受注ログ追加
       total.orders.push({
         user: interaction.user.tag,
         count: selected,
@@ -55,7 +54,7 @@ module.exports = {
 
       await writeState(guildId, state);
 
-      // パネル更新
+      // buildPanelButtonsは配列を返す想定に修正
       const embed = buildPanelEmbed(type, total);
       const components = buildPanelButtons(type);
 
@@ -70,10 +69,9 @@ module.exports = {
         console.warn(`[${type}] messageIdが未設定です。`);
       }
 
-      // スレッドログ出力
       try {
         await logToThread(guildId, type, interaction.client, {
-          user: interaction.user,
+          user: interaction.user.tag,
           logType: '受注',
           details: { requested: selected },
           channelName: interaction.channel.name,

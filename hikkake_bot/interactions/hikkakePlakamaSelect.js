@@ -22,7 +22,9 @@ module.exports = {
       if (!state[type]) state[type] = {};
       if (!state[type][channelId]) state[type][channelId] = { pura: 0, kama: 0, orders: [], messageId: null };
 
-      // 追加ではなく上書きが良いケースなら =selected にしてください
+      // 上書きにしたい場合は以下を使う（追加ではなく）
+      // state[type][channelId].pura = selected;
+      // 追加なら以下のまま
       state[type][channelId].pura += selected;
 
       await writeState(guildId, state);

@@ -22,6 +22,7 @@ async function updateAllPanels(interaction, state) {
         flat: counts.casual ?? 0,
         order: orderCount,
       });
+
       const buttons = buildPanelButtons(key);
       await msg.edit({ embeds: [embed], components: buttons });
     } catch (e) {
@@ -46,6 +47,7 @@ module.exports = {
     const guildId = interaction.guildId;
     const state = await readState(guildId);
 
+    if (!state.counts) state.counts = {};
     if (!state.counts[type]) {
       return interaction.editReply({ content: '対象のデータが見つかりません。' });
     }

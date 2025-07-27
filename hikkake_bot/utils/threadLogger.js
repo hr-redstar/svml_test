@@ -9,6 +9,7 @@ const LOG_THREAD_PREFIX = {
   horse: 'トロイログ_',
 };
 
+// ログメッセージのフォーマット
 function formatLogMessage(now, logData) {
   const { user, logType, details, channelName } = logData;
   const time = now.toFormat('MM/dd HH:mm');
@@ -22,55 +23,65 @@ function formatLogMessage(now, logData) {
     case 'ふらっと来た':
       return `${base} **ふらっと来た** を更新 (${details.casual}人)`;
     default:
-      // 以前のフォーマットとの後方互換性
       return `📝【${time}】${logData.user.username} が **${logData.count}人** を **${logData.channelName}** で操作`;
   }
 }
 
+// スレッドの取得または作成
+async function getOrCreateThread({ guildId, type, client, logKey, state, logChannel }) {
+  const threadName = `${LOG_THREAD_PREFIX[type]}${logKey}`;
+  let thread = null;
+
+  // 既存スレッドの再取得
+  const existingThreadId = state.logs?.[type]?.[logKey];
+  if (existingThreadId) {
+    try {
+      thread = await logChannel.threads.fetch(existingThreadId);
+    } catch (e) {
+      console.warn(`[ログスレッド取得失敗] ${threadName}:`, e.message);
+    }
+  }
+
+  // 存在しなければ新規作成
+  if (!thread) {
+    thread = await logChannel.threads.create({
+      name: threadName,
+      autoArchiveDuration: 10080, // 7日
+    });
+
+    // state を更新
+    if (!state.logs) state.logs = {};
+    if (!state.logs[type]) state.logs[type] = {};
+    state.logs[type][logKey] = thread.id;
+    await writeState(guildId, state);
+  }
+
+  return thread;
+}
+
+// メイン関数：ログをスレッドに送信
 async function logToThread(guildId, type, client, logData) {
   const now = DateTime.now().setZone('Asia/Tokyo');
   const logKey = now.toFormat('yyyyMM'); // 例: 202507
 
   const state = await readState(guildId);
-
-  if (!state.logs) state.logs = {};
-  if (!state.logs[type]) state.logs[type] = {};
-  if (!state.logs[type][logKey]) state.logs[type][logKey] = null;
-
-  const threadName = `${LOG_THREAD_PREFIX[type]}${logKey}`;
-
-  // ログチャンネルがどこか調べる
   const logChannelId = state.logChannels?.[type];
   if (!logChannelId) return;
 
   const logChannel = await client.channels.fetch(logChannelId);
-  if (!logChannel || !logChannel.isTextBased()) return;
+  if (!logChannel?.isTextBased()) return;
 
-  let thread;
+  const thread = await getOrCreateThread({
+    guildId,
+    type,
+    client,
+    logKey,
+    state,
+    logChannel,
+  });
 
-  // 既存スレッドがあれば再取得
-  if (state.logs[type][logKey]) {
-    try {
-      thread = await logChannel.threads.fetch(state.logs[type][logKey]);
-    } catch (e) {
-      console.warn(`スレッド取得失敗: ${threadName}`, e);
-      thread = null;
-    }
-  }
+  if (!thread) return;
 
-  // なければ新規スレッドを作成
-  if (!thread) {
-    const createdThread = await logChannel.threads.create({
-      name: threadName,
-      autoArchiveDuration: 10080, // 7日
-    });
-
-    state.logs[type][logKey] = createdThread.id;
-    await writeState(guildId, state);
-    thread = createdThread;
-  }
-
-  // 投稿する内容
   const message = formatLogMessage(now, logData);
   await thread.send(message);
 }

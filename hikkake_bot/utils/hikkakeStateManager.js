@@ -1,8 +1,10 @@
+// hikkake_bot/utils/hikkakeStateManager.js
+
 const { Storage } = require('@google-cloud/storage');
 const path = require('path');
 
 const bucketName = 'data-svml'; // 固定
-const basePath = 'hikkake'; // フォルダ構成: hikkake/<GUILD_ID>/state.json
+const basePath = 'hikkake';     // フォルダ構成: hikkake/<GUILD_ID>/state.json
 
 const storage = new Storage();
 
@@ -11,6 +13,7 @@ function getFilePath(guildId) {
 }
 
 function getDefaultState() {
+  const defaultCount = { pura: 0, kama: 0, casual: 0, entries: [] };
   return {
     panelMessages: {
       quest: null,
@@ -18,9 +21,9 @@ function getDefaultState() {
       horse: null,
     },
     counts: {
-      quest: { pura: 0, kama: 0, casual: 0 },
-      tosu: { pura: 0, kama: 0, casual: 0 },
-      horse: { pura: 0, kama: 0, casual: 0 },
+      quest: { ...defaultCount },
+      tosu: { ...defaultCount },
+      horse: { ...defaultCount },
     },
     logChannels: {
       quest: null,
@@ -37,19 +40,29 @@ function getDefaultState() {
 
 function ensureStateStructure(state) {
   const types = ['quest', 'tosu', 'horse'];
+
   if (!state.panelMessages) state.panelMessages = {};
   if (!state.counts) state.counts = {};
   if (!state.logChannels) state.logChannels = {};
   if (!state.logs) state.logs = {};
 
   for (const type of types) {
-    if (!state.counts[type]) {
-      state.counts[type] = { pura: 0, kama: 0, casual: 0 };
-    }
-    if (typeof state.counts[type].casual !== 'number') state.counts[type].casual = 0;
-
+    if (!state.panelMessages[type]) state.panelMessages[type] = null;
+    if (!state.logChannels[type]) state.logChannels[type] = null;
     if (!state.logs[type]) state.logs[type] = {};
+
+    if (!state.counts[type]) {
+      state.counts[type] = { pura: 0, kama: 0, casual: 0, entries: [] };
+    }
+
+    // 安全チェックと初期化
+    const ct = state.counts[type];
+    if (typeof ct.pura !== 'number') ct.pura = 0;
+    if (typeof ct.kama !== 'number') ct.kama = 0;
+    if (typeof ct.casual !== 'number') ct.casual = 0;
+    if (!Array.isArray(ct.entries)) ct.entries = [];
   }
+
   return state;
 }
 

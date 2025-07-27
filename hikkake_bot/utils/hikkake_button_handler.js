@@ -1,6 +1,5 @@
 // hikkake_bot/utils/hikkake_button_handler.js
-const { ModalBuilder, TextInputBuilder, TextInputStyle, ActionRowBuilder } = require('discord.js');
-const { readState } = require('./hikkakeStateManager');
+const { StringSelectMenuBuilder, ActionRowBuilder } = require('discord.js');
 
 module.exports = {
   /**
@@ -18,33 +17,22 @@ module.exports = {
       let match = customId.match(/^hikkake_(quest|tosu|horse)_plakama$/);
       if (match) {
         const type = match[1];
-        const state = await readState(interaction.guildId);
-        const counts = state.counts?.[type] ?? { pura: 0, kama: 0 };
+        const options = Array.from({ length: 25 }, (_, i) => ({
+          label: `${i + 1}人`,
+          value: `${i + 1}`,
+        }));
+        const selectMenu = new StringSelectMenuBuilder()
+          .setCustomId(`hikkake_${type}_plakama_select`)
+          .setPlaceholder('プラカマ人数を選択してください（1〜25）')
+          .addOptions(options);
 
-        const modal = new ModalBuilder()
-          .setCustomId(`hikkake_plakama_modal_${type}`)
-          .setTitle(`【${type.toUpperCase()}】プラカマ人数設定`);
+        const row = new ActionRowBuilder().addComponents(selectMenu);
 
-        const puraInput = new TextInputBuilder()
-          .setCustomId('pura_count')
-          .setLabel('プラの人数')
-          .setStyle(TextInputStyle.Short)
-          .setValue(String(counts.pura ?? 0))
-          .setRequired(true);
-
-        const kamaInput = new TextInputBuilder()
-          .setCustomId('kama_count')
-          .setLabel('カマの人数')
-          .setStyle(TextInputStyle.Short)
-          .setValue(String(counts.kama ?? 0))
-          .setRequired(true);
-
-        modal.addComponents(
-          new ActionRowBuilder().addComponents(puraInput),
-          new ActionRowBuilder().addComponents(kamaInput)
-        );
-
-        await interaction.showModal(modal);
+        await interaction.reply({
+          content: `【${type.toUpperCase()}】プラカマ人数を選んでください。`,
+          components: [row],
+          ephemeral: true,
+        });
         return true;
       }
 
@@ -52,20 +40,22 @@ module.exports = {
       match = customId.match(/^hikkake_(quest|tosu|horse)_order$/);
       if (match) {
         const type = match[1];
-        const modal = new ModalBuilder()
-          .setCustomId(`hikkake_order_modal_${type}`)
-          .setTitle(`【${type.toUpperCase()}】受注人数入力`);
+        const options = Array.from({ length: 25 }, (_, i) => ({
+          label: `${i}人`,
+          value: `${i}`,
+        }));
+        const selectMenu = new StringSelectMenuBuilder()
+          .setCustomId(`hikkake_${type}_order_select`)
+          .setPlaceholder('受注人数を選択してください（0〜24）')
+          .addOptions(options);
 
-        const orderInput = new TextInputBuilder()
-          .setCustomId('order_count')
-          .setLabel('受注した人数')
-          .setStyle(TextInputStyle.Short)
-          .setPlaceholder('半角数字で入力')
-          .setRequired(true);
+        const row = new ActionRowBuilder().addComponents(selectMenu);
 
-        modal.addComponents(new ActionRowBuilder().addComponents(orderInput));
-
-        await interaction.showModal(modal);
+        await interaction.reply({
+          content: `【${type.toUpperCase()}】受注人数を選んでください。`,
+          components: [row],
+          ephemeral: true,
+        });
         return true;
       }
 
@@ -73,22 +63,22 @@ module.exports = {
       match = customId.match(/^hikkake_(quest|tosu|horse)_casual$/);
       if (match) {
         const type = match[1];
-        const state = await readState(interaction.guildId);
-        const currentCasual = String(state.counts?.[type]?.casual ?? 0);
+        const options = Array.from({ length: 25 }, (_, i) => ({
+          label: `${i + 1}人`,
+          value: `${i + 1}`,
+        }));
+        const selectMenu = new StringSelectMenuBuilder()
+          .setCustomId(`hikkake_${type}_casual_select`)
+          .setPlaceholder('ふらっと来た人数を選択してください（1〜25）')
+          .addOptions(options);
 
-        const modal = new ModalBuilder()
-          .setCustomId(`hikkake_casual_modal_${type}`)
-          .setTitle(`【${type.toUpperCase()}】ふらっと来た人数`);
+        const row = new ActionRowBuilder().addComponents(selectMenu);
 
-        const casualInput = new TextInputBuilder()
-          .setCustomId('casual_count')
-          .setLabel('ふらっと来た人数')
-          .setStyle(TextInputStyle.Short)
-          .setValue(currentCasual)
-          .setRequired(true);
-
-        modal.addComponents(new ActionRowBuilder().addComponents(casualInput));
-        await interaction.showModal(modal);
+        await interaction.reply({
+          content: `【${type.toUpperCase()}】ふらっと来た人数を選んでください。`,
+          components: [row],
+          ephemeral: true,
+        });
         return true;
       }
 

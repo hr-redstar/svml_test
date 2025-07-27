@@ -14,9 +14,14 @@ module.exports = {
       const guildId = interaction.guildId;
       const channelId = interaction.channelId;
 
+      const typeLabel = {
+        quest: 'クエスト',
+        tosu: '凸スナ',
+        horse: 'トロイの木馬',
+      }[type] || type.toUpperCase();
+
       const state = await readState(guildId);
 
-      // パネル用の状態がなければ初期化（panelMessages、countsなどは別途管理）
       if (!state.counts) state.counts = {};
       if (!state.counts[type]) {
         state.counts[type] = { pura: 0, kama: 0, casual: 0 };
@@ -31,12 +36,6 @@ module.exports = {
         };
       }
 
-      // プラカマはpura + kama で設定できる想定なので、
-      // 実際の選択はプラかカマどちらかを選べないなら、ここは人数の合計として扱う。
-
-      // 今回は「プラカマ人数選択」なので単一人数選択のUI提供。数値は1~25。
-
-      // 選択メニュー生成
       const selectMenu = new StringSelectMenuBuilder()
         .setCustomId(`hikkake_${type}_plakama_select`)
         .setPlaceholder('人数を選択してください（1〜25）')
@@ -51,11 +50,10 @@ module.exports = {
       const row = new ActionRowBuilder().addComponents(selectMenu);
 
       await interaction.reply({
-        content: `【${type.toUpperCase()}】プラカマ人数を選択してください。`,
+        content: `【${typeLabel}】プラカマ人数を選択してください。`,
         components: [row],
         ephemeral: true,
       });
-
     } catch (error) {
       console.error('[hikkakePlakama] エラー:', error);
       if (!interaction.replied && !interaction.deferred) {

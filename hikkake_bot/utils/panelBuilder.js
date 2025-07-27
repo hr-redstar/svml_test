@@ -12,7 +12,7 @@ function buildPanelEmbed(type, counts = {}) {
 
   if (type === 'order') {
     return new EmbedBuilder()
-      .setTitle(`🗂 受注一覧`)
+      .setTitle(`📂 受注一覧`)
       .setDescription(
         `【クエスト受注】\n` +
         `**受注**　組数：${counts.quest?.group || 0}組 / 人数：${counts.quest?.member || 0}人　本数：${counts.quest?.count || 0}本　キャスト予定人数 -${counts.quest?.cast || 0}（リスト選択1~25）\n\n` +

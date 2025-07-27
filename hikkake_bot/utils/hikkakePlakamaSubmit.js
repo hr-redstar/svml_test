@@ -12,9 +12,18 @@ async function updateAllPanels(interaction, state) {
     try {
       const channel = await interaction.client.channels.fetch(panelInfo.channelId);
       const msg = await channel.messages.fetch(panelInfo.messageId);
-      const embed = buildPanelEmbed(key, state.counts?.[key]);
+
+      const counts = state.counts?.[key] || { pura: 0, kama: 0, casual: 0 };
+      const orderCount = state.orders?.[key] ?? 0;
+
+      const embed = buildPanelEmbed(key, {
+        plakama: (counts.pura ?? 0) + (counts.kama ?? 0),
+        flat: counts.casual ?? 0,
+        order: orderCount,
+      });
+
       const buttons = buildPanelButtons(key);
-      await msg.edit({ embeds: [embed], components: [buttons] });
+      await msg.edit({ embeds: [embed], components: buttons });
     } catch (e) {
       console.warn(`[hikkakePlakamaSubmit] パネル更新失敗: ${key}`, e.message);
     }
@@ -30,8 +39,8 @@ module.exports = {
     const puraCount = parseInt(interaction.fields.getTextInputValue('pura_count'), 10);
     const kamaCount = parseInt(interaction.fields.getTextInputValue('kama_count'), 10);
 
-    if (isNaN(puraCount) || isNaN(kamaCount)) {
-      return interaction.editReply({ content: '人数は半角数字で入力してください。' });
+    if (isNaN(puraCount) || puraCount < 0 || isNaN(kamaCount) || kamaCount < 0) {
+      return interaction.editReply({ content: '人数は0以上の半角数字で入力してください。' });
     }
 
     const guildId = interaction.guildId;
@@ -55,6 +64,8 @@ module.exports = {
       console.warn('[hikkakePlakamaSubmit] ログ出力失敗', e);
     }
 
-    await interaction.editReply({ content: `【${type.toUpperCase()}】のプラカマを プラ: ${puraCount}人, カマ: ${kamaCount}人 に更新しました。` });
+    await interaction.editReply({
+      content: `【${type.toUpperCase()}】のプラカマを プラ: ${puraCount}人, カマ: ${kamaCount}人 に更新しました。`
+    });
   }
 };

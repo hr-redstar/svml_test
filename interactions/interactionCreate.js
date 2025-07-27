@@ -12,35 +12,35 @@ const {
 } = require('discord.js');
 const { readFileNamesFromGCS, saveJsonToGCS } = require('../utils/gcs');
 
-const BUCKET_NAME = 'data-svml'; // .envなどで管理推奨
+const BUCKET_NAME = 'data-svml'; // TODO: .envで管理することを推奨
 
 module.exports = {
   name: Events.InteractionCreate,
   async execute(interaction) {
     try {
       const guildId = interaction.guildId;
-      if (!guildId) return; // ギルド外は処理しない
+      if (!guildId) return; // DMなどギルド外は無視
 
-      // --- 売上報告ボタン押下 ---
+      // --- 売上報告ボタン押下時 ---
       if (interaction.isButton() && interaction.customId === 'sales_report') {
         const modal = new ModalBuilder()
           .setCustomId('sales_modal')
           .setTitle('売上報告');
 
         const fields = [
-          { customId: 'date', label: '日付 (例: 7/7)', style: TextInputStyle.Short, required: true },
-          { customId: 'total', label: '総売り (数字のみ)', style: TextInputStyle.Short, required: true },
-          { customId: 'cash', label: '現金', style: TextInputStyle.Short, required: false },
-          { customId: 'card', label: 'カード', style: TextInputStyle.Short, required: false },
-          { customId: 'expense', label: '諸経費', style: TextInputStyle.Short, required: false },
+          { id: 'date', label: '日付 (例: 7/7)', required: true },
+          { id: 'total', label: '総売り (数字のみ)', required: true },
+          { id: 'cash', label: '現金', required: false },
+          { id: 'card', label: 'カード', required: false },
+          { id: 'expense', label: '諸経費', required: false },
         ];
 
-        fields.forEach(field => {
+        fields.forEach(({ id, label, required }) => {
           const input = new TextInputBuilder()
-            .setCustomId(field.customId)
-            .setLabel(field.label)
-            .setStyle(field.style)
-            .setRequired(field.required);
+            .setCustomId(id)
+            .setLabel(label)
+            .setStyle(TextInputStyle.Short)
+            .setRequired(required);
           modal.addComponents(new ActionRowBuilder().addComponents(input));
         });
 
@@ -52,21 +52,19 @@ module.exports = {
       if (interaction.type === InteractionType.ModalSubmit && interaction.customId === 'sales_modal') {
         await interaction.deferReply({ ephemeral: true });
 
-        // フォーム値取得
         const date = interaction.fields.getTextInputValue('date');
         const total = interaction.fields.getTextInputValue('total');
         const cash = interaction.fields.getTextInputValue('cash');
         const card = interaction.fields.getTextInputValue('card');
         const expense = interaction.fields.getTextInputValue('expense');
 
-        // ファイル名生成（安全のため日付は「/」→「-」に置換）
         const now = new Date();
         const year = now.getFullYear();
         const timestamp = now.toISOString();
+
         const fileName = `${year}_${date.replace(/\//g, '-')}_${interaction.user.id}.json`;
         const filePath = `data/${guildId}/sales/${fileName}`;
 
-        // データ構造
         const report = {
           user: {
             id: interaction.user.id,
@@ -80,7 +78,6 @@ module.exports = {
           submittedAt: timestamp,
         };
 
-        // GCSへ保存
         await saveJsonToGCS(filePath, report);
 
         await interaction.editReply({
@@ -89,7 +86,7 @@ module.exports = {
         return;
       }
 
-      // --- CSV ダウンロード用セレクトメニュー選択時 ---
+      // --- CSV セレクトメニュー選択時 ---
       if (interaction.isStringSelectMenu()) {
         const { customId, values } = interaction;
         if (!['select_date', 'select_month', 'select_quarter'].includes(customId)) return;
@@ -101,6 +98,7 @@ module.exports = {
           select_month: 'month_',
           select_quarter: 'quarter_',
         };
+
         const selected = values[0];
         const fileName = `${prefixMap[customId]}${selected}.csv`;
         const fileUrl = `https://storage.googleapis.com/${BUCKET_NAME}/data/${guildId}/csv/${fileName}`;
@@ -121,10 +119,8 @@ module.exports = {
         const type = interaction.customId.replace('csv_', '');
         const dirPath = `data/${guildId}/csv/`;
 
-        // GCSからファイル一覧取得
         const files = await readFileNamesFromGCS(dirPath);
 
-        // フィルター関数を定義し簡潔に
         const filterPatterns = {
           date: /^\d{4}-\d{1,2}.*\.csv$/,
           month: /^month_\d{4}-\d{1,2}\.csv$/,
@@ -141,6 +137,7 @@ module.exports = {
         if (filtered.length === 1) {
           const fileName = filtered[0];
           const fileUrl = `https://storage.googleapis.com/${BUCKET_NAME}/${dirPath}${fileName}`;
+
           const embed = new EmbedBuilder()
             .setTitle('📄 CSVダウンロード')
             .setDescription(`[${fileName}](${fileUrl}) をダウンロードできます。`)
@@ -150,7 +147,7 @@ module.exports = {
           return;
         }
 
-        // 複数ファイルある場合はセレクトメニュー表示
+        // 複数ファイル → セレクトメニューを提示
         const options = filtered.slice(0, 25).map(f => ({
           label: f.replace(/^(month_|quarter_)?/, '').replace('.csv', ''),
           value: f.replace(/^(month_|quarter_)?/, '').replace('.csv', ''),
@@ -169,10 +166,13 @@ module.exports = {
       }
     } catch (error) {
       console.error('[interactionCreate] エラー:', error);
-      // できればユーザへも通知する（エラー時）
+
       if (!interaction.replied && !interaction.deferred) {
         try {
-          await interaction.reply({ content: '内部エラーが発生しました。管理者に連絡してください。', ephemeral: true });
+          await interaction.reply({
+            content: '⚠️ 内部エラーが発生しました。管理者に連絡してください。',
+            ephemeral: true,
+          });
         } catch {}
       }
     }

@@ -17,9 +17,10 @@ async function updateAllPanels(interaction, state) {
       const orderCount = state.orders?.[key] ?? 0;
 
       const embed = buildPanelEmbed(key, {
-        plakama: (counts.pura ?? 0) + (counts.kama ?? 0),
-        flat: counts.casual ?? 0,
-        order: orderCount,
+        pura: counts.pura ?? 0,
+        kama: counts.kama ?? 0,
+        casual: counts.casual ?? 0,
+        orders: state[type]?.[panelInfo.channelId]?.orders ?? [], // 必要に応じて修正
       });
 
       const buttons = buildPanelButtons(key);
@@ -45,6 +46,7 @@ module.exports = {
     const guildId = interaction.guildId;
     const state = await readState(guildId);
 
+    if (!state.counts) state.counts = {};
     if (!state.counts[type]) state.counts[type] = { pura: 0, kama: 0, casual: 0 };
     state.counts[type].casual = casualCount;
 

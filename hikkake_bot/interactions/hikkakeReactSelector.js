@@ -6,18 +6,23 @@ module.exports = {
   customId: /^set_react_(quest|tosu|horse)_(num|count)$/,  // 正規表現で共通化
   async handle(interaction) {
     try {
+      // customIdからtype, targetを抽出
       const [, type, target] = interaction.customId.match(/^set_react_(quest|tosu|horse)_(num|count)$/);
+
+      // 種類の日本語ラベル
       const typeLabel = {
         quest: 'クエスト',
         tosu: '凸スナ',
         horse: 'トロイの木馬',
       }[type] ?? '不明';
 
+      // 対象の日本語ラベル
       const targetLabel = {
         num: '人数',
         count: '本数',
       }[target] ?? '不明';
 
+      // セレクトメニュー作成
       const selectMenu = new StringSelectMenuBuilder()
         .setCustomId(`react_count_select_${type}_${target}`)
         .setPlaceholder(`設定する${typeLabel}の${targetLabel}を選んでください`)
@@ -32,6 +37,7 @@ module.exports = {
 
       const row = new ActionRowBuilder().addComponents(selectMenu);
 
+      // 返信
       await interaction.reply({
         content: `✅ ${typeLabel} の ${targetLabel}数を選択してください。`,
         components: [row],

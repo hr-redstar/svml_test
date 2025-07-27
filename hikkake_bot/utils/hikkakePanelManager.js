@@ -1,6 +1,11 @@
 // utils/hikkakePanelManager.js
 
-const { EmbedBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle } = require('discord.js');
+const {
+  EmbedBuilder,
+  ActionRowBuilder,
+  ButtonBuilder,
+  ButtonStyle,
+} = require('discord.js');
 
 /**
  * すべてのhikkakeパネルを更新
@@ -10,24 +15,25 @@ const { EmbedBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle } = require('
  */
 async function updateAllHikkakePanels(client, guildId, state) {
   try {
-    const guild = await client.guilds.fetch(guildId);
+    const guild = await client.guilds.fetch(guildId).catch(() => null);
     if (!guild) {
       console.warn(`[updateAllHikkakePanels] ギルド取得失敗: ${guildId}`);
       return;
     }
 
+    /** @type {Array<'quest' | 'tosu' | 'horse'>} */
     const panelTypes = ['quest', 'tosu', 'horse'];
 
     for (const type of panelTypes) {
       const panelInfo = state.panelMessages?.[type];
       if (!panelInfo) {
-        console.warn(`[updateAllHikkakePanels] panelMessagesに${type}の情報がありません`);
+        console.warn(`[updateAllHikkakePanels] ${type}のpanelMessagesが見つかりません`);
         continue;
       }
 
       const channel = await guild.channels.fetch(panelInfo.channelId).catch(() => null);
-      if (!channel) {
-        console.warn(`[updateAllHikkakePanels] チャンネル取得失敗: ${panelInfo.channelId}`);
+      if (!channel || !channel.isTextBased()) {
+        console.warn(`[updateAllHikkakePanels] 無効なチャンネル: ${panelInfo.channelId}`);
         continue;
       }
 
@@ -37,11 +43,10 @@ async function updateAllHikkakePanels(client, guildId, state) {
         continue;
       }
 
-      // countsとordersはstateにあると仮定
       const counts = state.counts?.[type] || { pura: 0, kama: 0, casual: 0 };
       const orderCount = state.orders?.[type] ?? 0;
 
-      const embed = buildPanelEmbed(type, { 
+      const embed = buildPanelEmbed(type, {
         plakama: (counts.pura ?? 0) + (counts.kama ?? 0),
         flat: counts.casual ?? 0,
         order: orderCount,
@@ -75,9 +80,9 @@ function buildPanelEmbed(type, data) {
   return new EmbedBuilder()
     .setTitle(titleMap[type] || '一覧')
     .setDescription(
-      `📦 **受注人数:** ${data.order ?? 0}人\n` +
-      `👥 **プラカマ人数:** ${data.plakama ?? 0}人\n` +
-      `🚶‍♂️ **ふらっと来ちゃった:** ${data.flat ?? 0}人`
+      `📦 **受注人数:** ${data.order}人\n` +
+      `👥 **プラカマ人数:** ${data.plakama}人\n` +
+      `🚶‍♂️ **ふらっと来ちゃった:** ${data.flat}人`
     )
     .setColor(0x0099ff)
     .setFooter({ text: `最終更新: ${new Date().toLocaleString('ja-JP')}` });
@@ -86,7 +91,7 @@ function buildPanelEmbed(type, data) {
 /**
  * パネル用ボタンを生成
  * @param {'quest' | 'tosu' | 'horse'} type 
- * @returns {import('discord.js').ActionRowBuilder[]}
+ * @returns {ActionRowBuilder[]}
  */
 function buildPanelButtons(type) {
   const row = new ActionRowBuilder().addComponents(
@@ -111,4 +116,6 @@ function buildPanelButtons(type) {
 
 module.exports = {
   updateAllHikkakePanels,
+  buildPanelEmbed,
+  buildPanelButtons,
 };

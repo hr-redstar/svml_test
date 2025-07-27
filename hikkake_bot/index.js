@@ -6,26 +6,24 @@
 
 const hikkakeModals = require('./utils/hikkake_modals');
 const hikkakeButtons = require('./utils/hikkake_buttons');
-
-/*
-// 【開発時のみ】読み込み成功確認ログ
-console.log('hikkakeButtons 読み込み成功:', !!hikkakeButtons);
-*/
+const hikkakeSelects = require('./utils/hikkake_selects');
+const hikkakeSetup = require('./commands/hikkakeSetup');
+const hikkakeStateManager = require('./utils/hikkakeStateManager');
+const hikkakePanelManager = require('./utils/hikkakePanelManager');
+const hikkakeReactionFetcher = require('./utils/hikkakeReactionFetcher');
+const hikkakeThreadLogger = require('./utils/threadLogger');
 
 /**
- * 例: interactionCreateイベントでのボタン押下時の処理例
- * 
- * client.on('interactionCreate', async (interaction) => {
- *   if (interaction.isButton()) {
- *     // 例えばカスタムIDで判定
- *     if (interaction.customId === 'hikkake_quest_plakama') {
- *       // hikkakeButtons の関数呼び出しなど
- *     }
- *   }
- * });
+ * エクスポートするモジュールを集約
+ * 他の場所から簡単にインポートできるようにする
  */
-
 module.exports = {
   hikkakeModals,
   hikkakeButtons,
+  hikkakeSelects,
+  hikkakeSetup,
+  hikkakeStateManager,
+  hikkakePanelManager,
+  hikkakeReactionFetcher,
+  hikkakeThreadLogger,
 };

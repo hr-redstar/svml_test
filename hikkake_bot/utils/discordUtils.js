@@ -8,6 +8,11 @@ const { client } = require('../client');
  * @returns {Promise<import('discord.js').Guild|null>}
  */
 async function getGuild(guildId) {
+  if (!client || !client.isReady()) {
+    console.warn('[getGuild] clientが準備できていません。');
+    return null;
+  }
+
   try {
     // キャッシュにあれば即返す
     const cachedGuild = client.guilds.cache.get(guildId);

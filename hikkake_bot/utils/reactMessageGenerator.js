@@ -1,12 +1,14 @@
+// utils/reactMessageGenerator.js
+
 const { readJsonFromGCS } = require('./gcs');
 
 /**
- * リアクション文を取得（カテゴリ・種類・人数/本数）
- * @param {string} guildId 
- * @param {"quest"|"tosu"|"horse"} type 
- * @param {"num"|"count"} key 
- * @param {number} value 
- * @returns {Promise<string|null>}
+ * 指定されたリアクション文をランダムに取得する
+ * @param {string} guildId - サーバーID
+ * @param {"quest"|"tosu"|"horse"} type - カテゴリ
+ * @param {"num"|"count"} key - 人数または本数
+ * @param {number} value - 対象となる人数や本数
+ * @returns {Promise<string|null>} - ランダムに選ばれたリアクション文、または null
  */
 async function getRandomReactionMessage(guildId, type, key, value) {
   try {
@@ -14,10 +16,11 @@ async function getRandomReactionMessage(guildId, type, key, value) {
     const data = await readJsonFromGCS(path);
 
     const reactions = data?.[type]?.[key]?.[value];
-    if (reactions && reactions.length > 0) {
+    if (Array.isArray(reactions) && reactions.length > 0) {
       const index = Math.floor(Math.random() * reactions.length);
       return reactions[index];
     }
+
     return null;
   } catch (e) {
     console.error('[ReactionFetchError]', e);

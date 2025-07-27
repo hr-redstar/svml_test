@@ -5,20 +5,19 @@ module.exports = {
   customId: /^hikkake_(quest|tosu|horse)_order$/,
   async handle(interaction) {
     try {
-      // 正規表現のキャプチャでtype取得
       const match = interaction.customId.match(/^hikkake_(quest|tosu|horse)_order$/);
-      if (!match) return; // 万一の安全対策
+      if (!match) return;
       const type = match[1];
 
       const options = Array.from({ length: 25 }, (_, i) => 
         new StringSelectMenuOptionBuilder()
-          .setLabel(`${i}人`)
-          .setValue(i.toString())
+          .setLabel(`${i + 1}人`)
+          .setValue((i + 1).toString())
       );
 
       const selectMenu = new StringSelectMenuBuilder()
         .setCustomId(`hikkake_${type}_order_select`)
-        .setPlaceholder('受注する人数を選択（0〜24）')
+        .setPlaceholder('受注する人数を選択（1〜25）')
         .addOptions(options);
 
       const row = new ActionRowBuilder().addComponents(selectMenu);
