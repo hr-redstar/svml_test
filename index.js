@@ -115,7 +115,7 @@ client.on(Events.InteractionCreate, async (interaction) => {
 
     const errorMessage = {
       content: 'コマンド実行中にエラーが発生しました。',
-      ephemeral: true,
+      flags: 64, // 64 is MessageFlags.Ephemeral
     };
 
     if (interaction.replied || interaction.deferred) {

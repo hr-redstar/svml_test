@@ -84,18 +84,29 @@ function buildPanelEmbed(panelType, hikkakeType, state, guildId) {
       embed.setDescription('現在、受注はありません。');
     } else {
       const description = orders.map(order => {
-        const typeLabel = order.type === 'order' ? '受注' : 'ふらっと来た';
+        const typeLabelMap = {
+          order: '受注',
+          casual_leave: '退店',
+          casual_arrival: 'ふらっと来た',
+        };
+        const typeLabel = typeLabelMap[order.type] || 'ログ';
+
         const castPura = order.castPura || 0;
         const castKama = order.castKama || 0;
         const totalCast = castPura + castKama;
         const timestamp = DateTime.fromISO(order.timestamp).setZone('Asia/Tokyo').toFormat('HH:mm');
         const userMention = order.user?.id ? `<@${order.user.id}>` : '不明';
 
-        const parts = [
-          `【${typeLabel}】キャスト: -${totalCast}人`,
-          `人数: ${order.people}人`,
-          `本数: ${order.bottles}本`,
-        ];
+        let parts;
+        if (order.type === 'casual_arrival') {
+          parts = [`【${typeLabel}】スタッフ追加: プラ+${castPura}人 / カマ+${castKama}人`];
+        } else {
+          const peopleLabel = order.type === 'order' ? '人数' : '対象';
+          parts = [`【${typeLabel}】キャスト: -${totalCast}人`, `${peopleLabel}: ${order.people}人`];
+          if (order.type === 'order' && order.bottles > 0) {
+            parts.push(`本数: ${order.bottles}本`);
+          }
+        }
         const meta = `${timestamp} ${userMention}`;
         return `${parts.join('　')}　　${meta}`;
       }).join('\n');
@@ -119,9 +130,13 @@ function buildPanelButtons(type) {
       .setLabel('受注')
       .setStyle(ButtonStyle.Success),
     new ButtonBuilder()
-      .setCustomId(`hikkake_${type}_casual`)
+      .setCustomId(`hikkake_${type}_leave`)
+      .setLabel('退店')
+      .setStyle(ButtonStyle.Secondary),
+    new ButtonBuilder()
+      .setCustomId(`hikkake_${type}_arrival`)
       .setLabel('ふらっと来た')
-      .setStyle(ButtonStyle.Secondary)
+      .setStyle(ButtonStyle.Secondary),
   );
   return [row];
 }

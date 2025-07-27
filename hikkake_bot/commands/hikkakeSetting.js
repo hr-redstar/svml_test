@@ -30,7 +30,7 @@ module.exports = {
     await interaction.reply({
       embeds: [embed],
       components: rows,
-      ephemeral: true,
+      flags: 64, // 64 is MessageFlags.Ephemeral
     });
   },
 };

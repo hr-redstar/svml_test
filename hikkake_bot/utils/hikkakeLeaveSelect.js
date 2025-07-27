@@ -1,11 +1,11 @@
-// hikkake_bot/utils/hikkakeCasualSelect.js
+// hikkake_bot/utils/hikkakeLeaveSelect.js (previously hikkakeCasualSelect.js)
 const { readState, writeState } = require('./hikkakeStateManager');
 const { updateAllHikkakePanels } = require('./hikkakePanelManager');
 const { logToThread } = require('./threadLogger');
 const { createSelectMenuRow, createNumericOptions } = require('./discordUtils');
 
 module.exports = {
-  customId: /^hikkake_casual_step(1|2)_(quest|tosu|horse)/,
+  customId: /^hikkake_leave_step(1|2)_(quest|tosu|horse)/,
   async handle(interaction) {
     const match = interaction.customId.match(this.customId);
     const step = parseInt(match[1], 10);
@@ -14,7 +14,7 @@ module.exports = {
     if (step === 1) {
       // Step 1: プラの人数を受け取り、カマの人数選択メニューを表示
       const puraLeaveCount = interaction.values[0];
-      const newCustomId = `hikkake_casual_step2_${type}_${puraLeaveCount}`;
+      const newCustomId = `hikkake_leave_step2_${type}_${puraLeaveCount}`;
       const row = createSelectMenuRow(newCustomId, '退店したカマの人数を選択 (0-24)', createNumericOptions(25, '人', 0));
       await interaction.update({
         content: `【${type.toUpperCase()}】退店プラ: ${puraLeaveCount}人。次に退店したカマの人数を選択してください。`,
@@ -25,7 +25,7 @@ module.exports = {
       // Immediately acknowledge the interaction to prevent timeout
       await interaction.deferUpdate();
 
-      const puraLeaveCount = parseInt(interaction.customId.split('_')[4], 10);
+      const puraLeaveCount = parseInt(interaction.customId.split('_')[5], 10);
       const kamaLeaveCount = parseInt(interaction.values[0], 10);
 
       if (isNaN(puraLeaveCount) || isNaN(kamaLeaveCount)) {
@@ -58,7 +58,7 @@ module.exports = {
       try {
         const logMessage = await logToThread(guildId, type, interaction.client, {
           user: interaction.user,
-          logType: 'ふらっと来た', // This will be interpreted as "leaving"
+          logType: 'スタッフ退店',
           details: { pura: puraLeaveCount, kama: kamaLeaveCount },
           channelName: interaction.channel.name,
         });
@@ -66,7 +66,7 @@ module.exports = {
             newLogEntry.logUrl = logMessage.url;
         }
       } catch (e) {
-        console.warn('[hikkakeCasualSelect] ログ出力失敗', e);
+        console.warn('[hikkakeLeaveSelect] ログ出力失敗', e);
       }
 
       state.orders[type].push(newLogEntry);

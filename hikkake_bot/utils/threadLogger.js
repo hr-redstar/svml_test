@@ -22,10 +22,10 @@ function formatLogMessage(now, logData) {
       const totalCast = (details.castPura || 0) + (details.castKama || 0);
       return `${base} **受注** を登録 (人数: ${details.people}人, 本数: ${details.bottles}本, キャスト消費: -${totalCast}人 [プ${details.castPura}/カ${details.castKama}])`;
     }
-    case 'ふらっと来た':
-      return `${base} **ふらっと来た** スタッフを追加 (プラ: +${details.pura ?? '-'}人, カマ: +${details.kama ?? '-'}人)`;
+    case 'ふらっと来た': // This now means "staff left"
+      return `${base} **スタッフ退店** を記録 (プラ: -${details.pura ?? '0'}人, カマ: -${details.kama ?? '0'}人)`;
     default:
-      return `📝【${time}】${user?.username || user?.tag || '不明ユーザー'} が操作しました。`;
+      return `📝【${time}】${user?.username || user?.tag || '不明ユーザー'} が不明な操作「${logType}」を実行しました。`;
   }
 }
 
@@ -63,30 +63,35 @@ async function getOrCreateThread({ guildId, type, client, logKey, state, logChan
 
 // メイン関数：ログをスレッドに送信
 async function logToThread(guildId, type, client, logData) {
-  const now = DateTime.now().setZone('Asia/Tokyo');
-  const logKey = now.toFormat('yyyyMM'); // 例: 202507
+  try {
+    const now = DateTime.now().setZone('Asia/Tokyo');
+    const logKey = now.toFormat('yyyyMM'); // 例: 202507
 
-  const state = await readState(guildId);
-  const logChannelId = state.logChannels?.[type];
-  if (!logChannelId) return;
+    const state = await readState(guildId);
+    const logChannelId = state.logChannels?.[type];
+    if (!logChannelId) return null;
 
-  const logChannel = await client.channels.fetch(logChannelId);
-  if (!logChannel?.isTextBased()) return;
+    const logChannel = await client.channels.fetch(logChannelId);
+    if (!logChannel?.isTextBased()) return null;
 
-  const thread = await getOrCreateThread({
-    guildId,
-    type,
-    client,
-    logKey,
-    state,
-    logChannel,
-  });
+    const thread = await getOrCreateThread({
+      guildId,
+      type,
+      client,
+      logKey,
+      state,
+      logChannel,
+    });
 
-  if (!thread) return;
+    if (!thread) return null;
 
-  const message = formatLogMessage(now, logData);
-  const sentMessage = await thread.send(message);
-  return sentMessage;
+    const message = formatLogMessage(now, logData);
+    const sentMessage = await thread.send(message);
+    return sentMessage;
+  } catch (error) {
+    console.error(`[logToThread] ログ出力中にエラーが発生しました (guild: ${guildId}, type: ${type})`, error);
+    return null; // ログ出力の失敗はメインの処理を妨げない
+  }
 }
 
 module.exports = { logToThread };

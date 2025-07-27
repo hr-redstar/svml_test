@@ -31,7 +31,7 @@ module.exports = {
     const horseChannel = interaction.options.getChannel('horse_channel');
 
     // state読み込み・初期化
-    await interaction.deferReply({ ephemeral: true });
+    await interaction.deferReply({ flags: 64 }); // 64 is MessageFlags.Ephemeral
 
     const state = await readState(guildId);
 
@@ -46,12 +46,12 @@ module.exports = {
         const channel = channels[type];
 
         // Post Status Panel (with buttons)
-        const statusEmbed = buildPanelEmbed('status', type, state);
+        const statusEmbed = buildPanelEmbed('status', type, state, guildId);
         const buttons = buildPanelButtons(type);
         const statusMsg = await channel.send({ embeds: [statusEmbed], components: buttons });
 
         // Post Orders Panel (display only)
-        const ordersEmbed = buildPanelEmbed('orders', type, state);
+        const ordersEmbed = buildPanelEmbed('orders', type, state, guildId);
         const ordersMsg = await channel.send({ embeds: [ordersEmbed] });
 
         // Update state with new message info

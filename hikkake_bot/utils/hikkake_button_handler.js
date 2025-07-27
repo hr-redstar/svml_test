@@ -37,7 +37,7 @@ module.exports = {
     }
     // --- End of new handler ---
 
-    const match = interaction.customId.match(/^hikkake_(quest|tosu|horse)_(plakama|order|casual)$/);
+    const match = interaction.customId.match(/^hikkake_(quest|tosu|horse)_(plakama|order|leave|arrival)$/);
     if (!match) return false;
 
     const [, type, action] = match;
@@ -53,16 +53,19 @@ module.exports = {
         content = `【${type.toUpperCase()}】受注: まず担当したプラの人数を選択してください。`;
         // BUG FIX: The number of options cannot exceed 25. Range 0-24 gives 25 options.
         row = createSelectMenuRow(`hikkake_order_step1_${type}`, '担当プラの人数を選択 (0-24)', createNumericOptions(25, '人', 0));
-      } else if (action === 'casual') {
+      } else if (action === 'leave') {
+        content = `【${type.toUpperCase()}】退店処理: まず退店したプラの人数を選択してください。`;
+        row = createSelectMenuRow(`hikkake_leave_step1_${type}`, '退店プラの人数を選択 (0-24)', createNumericOptions(25, '人', 0));
+      } else if (action === 'arrival') {
         content = `【${type.toUpperCase()}】ふらっと来た: まず追加するプラの人数を選択してください。`;
-        row = createSelectMenuRow(`hikkake_casual_step1_${type}`, '追加プラの人数を選択 (1-25)', createNumericOptions(25, '人'));
+        row = createSelectMenuRow(`hikkake_arrival_step1_${type}`, '追加プラの人数を選択 (0-24)', createNumericOptions(25, '人', 0));
       }
 
       if (row && content) {
         await interaction.reply({
           content,
           components: [row],
-          ephemeral: true,
+          flags: 64, // 64 is MessageFlags.Ephemeral
         });
         return true;
       }

@@ -18,7 +18,7 @@ module.exports = {
     await interaction.reply({
       content: 'ひっかけボットの設定メニューです。',
       components: [row],
-      ephemeral: true,
+      flags: 64, // 64 is MessageFlags.Ephemeral
     });
   },
 };

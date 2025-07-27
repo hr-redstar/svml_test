@@ -16,7 +16,7 @@ module.exports = {
 
       await interaction.reply({
         content: `✅ 反応文を「${newResponseText}」に設定しました。`,
-        ephemeral: true,
+        flags: 64, // 64 is MessageFlags.Ephemeral
       });
     } catch (error) {
       console.error('[hikkakeSettingsSubmit] 設定保存エラー:', error);
