@@ -75,7 +75,6 @@ console.log(`✅ ${client.commands.size} 個のコマンドを読み込みまし
 const modalHandler = require(path.join(__dirname, 'uriage_bot', 'utils', 'uriage_modals.js'));
 const buttonHandler = require(path.join(__dirname, 'uriage_bot', 'utils', 'uriage_buttons.js'));
 
-const hikkakeModalHandler = require(path.join(__dirname, 'hikkake_bot', 'utils', 'hikkake_modals.js'));
 const hikkakeButtonHandler = require(path.join(__dirname, 'hikkake_bot', 'utils', 'hikkake_button_handler.js'));
 const hikkakeSelectHandler = require(path.join(__dirname, 'hikkake_bot', 'utils', 'hikkake_select_handler.js'));
 
@@ -104,20 +103,10 @@ client.on(Events.InteractionCreate, async (interaction) => {
     // モーダル送信の汎用ハンドラ優先処理
     if (interaction.isModalSubmit()) {
       if (await modalHandler.execute(interaction)) return;
-      if (await hikkakeModalHandler.execute(interaction)) return;
     }
 
     // セレクトメニュー処理（hikkake系のものが多いため専用ハンドラも使用）
     if (interaction.isStringSelectMenu() || interaction.isRoleSelectMenu()) {
-      // 既存コマンドに対して処理を委譲（handleSelectMenuやhandleRoleSelectMenu実装があれば）
-      for (const command of client.commands.values()) {
-        if (interaction.isStringSelectMenu() && typeof command.handleSelectMenu === 'function') {
-          if (await command.handleSelectMenu(interaction)) return;
-        }
-        if (interaction.isRoleSelectMenu() && typeof command.handleRoleSelectMenu === 'function') {
-          if (await command.handleRoleSelectMenu(interaction)) return;
-        }
-      }
       // hikkakeセレクトメニューの汎用処理
       if (await hikkakeSelectHandler.execute(interaction)) return;
     }
@@ -126,7 +115,7 @@ client.on(Events.InteractionCreate, async (interaction) => {
 
     const errorMessage = {
       content: 'コマンド実行中にエラーが発生しました。',
-      flags: InteractionResponseFlags.Ephemeral,
+      ephemeral: true,
     };
 
     if (interaction.replied || interaction.deferred) {
